@@ -38,6 +38,7 @@ const (
 	PString
 	PStruct
 	PUnkown
+	PPointer
 )
 
 const (
@@ -202,7 +203,7 @@ func (vm *VMmemory) SetPointerMemory(val interface{}) (int, error) {
 				binary.LittleEndian.PutUint32(tmp, uint32(idx))
 				copy(sbytes[i*4:(i+1)*4], tmp)
 			}
-			return vm.copyMemAndGetIdx(sbytes, PInt32)
+			return vm.copyMemAndGetIdx(sbytes, PPointer)
 
 		case [][]byte:
 			bbytes := make([]byte, len(val.([][]byte))*4) //address is 4 bytes
@@ -215,7 +216,7 @@ func (vm *VMmemory) SetPointerMemory(val interface{}) (int, error) {
 				binary.LittleEndian.PutUint32(tmp, uint32(idx))
 				copy(bbytes[i*4:(i+1)*4], tmp)
 			}
-			return vm.copyMemAndGetIdx(bbytes, PInt32)
+			return vm.copyMemAndGetIdx(bbytes, PPointer)
 
 		default:
 			return 0, errors.New("Not supported slice type")

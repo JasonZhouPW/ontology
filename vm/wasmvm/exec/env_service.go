@@ -31,6 +31,7 @@ import (
 	"github.com/ontio/ontology/common/serialization"
 	"github.com/ontio/ontology/vm/wasmvm/memory"
 	"github.com/ontio/ontology/vm/wasmvm/util"
+	"github.com/ontio/ontology/common"
 )
 
 type Args struct {
@@ -196,7 +197,7 @@ func arrayLen(engine *ExecutionEngine) (bool, error) {
 			result = uint64(tl.Length / 1)
 		case memory.PInt16:
 			result = uint64(tl.Length / 2)
-		case memory.PInt32, memory.PFloat32:
+		case memory.PInt32, memory.PFloat32,memory.PPointer:
 			result = uint64(tl.Length / 4)
 		case memory.PInt64, memory.PFloat64:
 			result = uint64(tl.Length / 8)
@@ -553,6 +554,12 @@ func jsonMashal(engine *ExecutionEngine) (bool, error) {
 			return false, err
 		}
 		ret.Pval = util.TrimBuffToString(tmp)
+	case "byte_array":
+		tmp, err := engine.vm.GetPointerMemory(val)
+		if err != nil {
+			return false, err
+		}
+		ret.Pval = common.ToHexString(tmp)
 
 	case "int_array":
 		tmp, err := engine.vm.GetPointerMemory(val)
@@ -575,6 +582,23 @@ func jsonMashal(engine *ExecutionEngine) (bool, error) {
 		retArray := make([]string, length)
 		for i := 0; i < length; i++ {
 			retArray[i] = strconv.FormatInt(int64(binary.LittleEndian.Uint64(tmp[i:i+8])), 10)
+		}
+		ret.Pval = strings.Join(retArray, ",")
+
+	case "string_array":
+		tmp, err := engine.vm.GetPointerMemory(val)
+		if err != nil {
+			return false, err
+		}
+		length := len(tmp)/4
+
+		retArray := make([]string,length)
+		for i:=0; i< length;i++{
+			s,err := engine.vm.GetPointerMemory(uint64(binary.LittleEndian.Uint32(tmp[i*4:i*4+4])))
+			if err != nil {
+				return false, err
+			}
+			retArray[i] = util.TrimBuffToString(s)
 		}
 		ret.Pval = strings.Join(retArray, ",")
 	}

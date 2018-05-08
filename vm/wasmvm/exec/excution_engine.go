@@ -450,85 +450,8 @@ func (e *ExecutionEngine) call(caller common.Address,
 		}
 
 	} else {
-		//for test contract version
-		methodName, err := getCallMethodName(input)
-		if err != nil {
-			return nil, err
-		}
-
-		//1. read code
-		bf := bytes.NewBuffer(code)
-
-		//2. read module
-		m, err := wasm.ReadModule(bf, importer)
-		if err != nil {
-			return nil, errors.NewErr("[Call]Verify wasm failed!" + err.Error())
-		}
-
-		//3. verify the module
-		//already verified in step 2
-
-		//4. check the export
-		//every wasm should have at least 1 export
-		if m.Export == nil {
-			return nil, errors.NewErr("[Call]No export in wasm!")
-		}
-
-		vm, err := NewVM(m)
-		if err != nil {
-			return nil, err
-		}
-		if e.service != nil {
-			vm.Services = e.service.GetServiceMap()
-		}
-		e.vm = vm
-		vm.Engine = e
-		entry, ok := m.Export.Entries[methodName]
-		if ok == false {
-			return nil, errors.NewErr("[Call]Method:" + methodName + " does not exist!")
-		}
-		//get entry index
-		index := int64(entry.Index)
-
-		//get function index
-		fidx := m.Function.Types[int(index)]
-
-		//get  function type
-		ftype := m.Types.Entries[int(fidx)]
-
-		//paramtypes := ftype.ParamTypes
-
-		params, err := getParams(input)
-		if err != nil {
-			return nil, err
-		}
-
-		if len(params) != len(ftype.ParamTypes) {
-			return nil, errors.NewErr("[Call]Parameters count is not right")
-		}
-
-		res, err := vm.ExecCode(false, index, params...)
-		if err != nil {
-			return nil, errors.NewErr("[Call]ExecCode error!" + err.Error())
-		}
-
-		if len(ftype.ReturnTypes) == 0 {
-			return nil, nil
-		}
-
-		switch ftype.ReturnTypes[0] {
-		case wasm.ValueTypeI32:
-			return util.Int32ToBytes(res.(uint32)), nil
-		case wasm.ValueTypeI64:
-			return util.Int64ToBytes(res.(uint64)), nil
-		case wasm.ValueTypeF32:
-			return util.Float32ToBytes(res.(float32)), nil
-		case wasm.ValueTypeF64:
-			return util.Float64ToBytes(res.(float64)), nil
-		default:
-			return nil, errors.NewErr("[Call]the return type is not supported")
-		}
-
+		//reserved for other version
+		return nil, errors.NewErr("[Call] not supported verison:" + string(ver))
 	}
 }
 
