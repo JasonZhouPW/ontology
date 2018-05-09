@@ -76,16 +76,19 @@ func (this *WasmVmService) Invoke() (interface{}, error) {
 
 	//header
 	stateMachine.Register("ONT_Header_GetHashByHeight", this.headerGetHash)
-	stateMachine.Register("ONT_Header_GetVersionByHeight", this.headerGetVersionByHash)
-	stateMachine.Register("ONT_Header_GetVersionByHash", this.headerGetVersionByHeight)
-
-
-	stateMachine.Register("ONT_Header_GetPrevHash", this.headerGetPrevHash)
-	stateMachine.Register("ONT_Header_GetMerkleRoot", this.headerGetMerkleRoot)
-	stateMachine.Register("ONT_Header_GetIndex", this.headerGetIndex)
-	stateMachine.Register("ONT_Header_GetTimestamp", this.headerGetTimestamp)
-	stateMachine.Register("ONT_Header_GetConsensusData", this.headerGetConsensusData)
-	stateMachine.Register("ONT_Header_GetNextConsensus", this.headerGetNextConsensus)
+	stateMachine.Register("ONT_Header_GetVersionByHeight", this.headerGetVersionByHeight)
+	stateMachine.Register("ONT_Header_GetVersionByHash", this.headerGetVersionByHash)
+	stateMachine.Register("ONT_Header_GetPrevHashByHeight", this.headerGetPrevHashByHeight)
+	stateMachine.Register("ONT_Header_GetPrevHashByHash", this.headerGetPrevHashByHash)
+	stateMachine.Register("ONT_Header_GetMerkleRootByHeight", this.headerGetMerkleRootByHeight)
+	stateMachine.Register("ONT_Header_GetMerkleRootByHash", this.headerGetMerkleRootByHash)
+	stateMachine.Register("ONT_Header_GetIndexByHash", this.headerGetIndexByHash)
+	stateMachine.Register("ONT_Header_GetTimestampByHeight", this.headerGetTimestampByHeight)
+	stateMachine.Register("ONT_Header_GetTimestampByHash", this.headerGetTimestampByHash)
+	stateMachine.Register("ONT_Header_GetConsensusDataByHeight", this.headerGetConsensusDataByHeight)
+	stateMachine.Register("ONT_Header_GetConsensusDataByHash", this.headerGetConsensusDataByHash)
+	stateMachine.Register("ONT_Header_GetNextConsensusByHeight", this.headerGetNextConsensusByHeight)
+	stateMachine.Register("ONT_Header_GetNextConsensusByHash", this.headerGetNextConsensusByHash)
 
 	//storage
 	stateMachine.Register("ONT_Storage_Put", this.putstore)
@@ -93,7 +96,7 @@ func (this *WasmVmService) Invoke() (interface{}, error) {
 	stateMachine.Register("ONT_Storage_Delete", this.deletestore)
 
 	//transaction
-	stateMachine.Register("ONT_Transaction_GetHash", this.transactionGetHash)
+	//stateMachine.Register("ONT_Transaction_GetHash", this.transactionGetHash)
 	stateMachine.Register("ONT_Transaction_GetType", this.transactionGetType)
 	stateMachine.Register("ONT_Transaction_GetAttributes", this.transactionGetAttributes)
 
