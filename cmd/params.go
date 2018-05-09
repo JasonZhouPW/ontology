@@ -52,35 +52,22 @@ var (
 	listFlags = []cli.Flag{
 		utils.AccountVerboseFlag,
 		utils.WalletFileFlag,
-		utils.AccountFileFlag,
-		utils.AccountLabelFlag,
 	}
 
 	setFlags = []cli.Flag{
 		utils.AccountSigSchemeFlag,
 		utils.AccountSetDefaultFlag,
 		utils.WalletFileFlag,
-		utils.AccountFileFlag,
-		utils.AccountLabelFlag,
 	}
 	addFlags = []cli.Flag{
-		utils.AccountQuantityFlag,
 		utils.AccountTypeFlag,
 		utils.AccountKeylenFlag,
 		utils.AccountSigSchemeFlag,
 		utils.AccountPassFlag,
 		utils.AccountDefaultFlag,
-		utils.AccountFileFlag,
-		utils.AccountLabelFlag,
 		utils.WalletFileFlag,
 	}
 	fileFlags = []cli.Flag{
 		utils.WalletFileFlag,
-		utils.AccountFileFlag,
-	}
-	importFlags = []cli.Flag{
-		utils.AccountFileFlag,
-		utils.AccountSourceFileFlag,
-		utils.AccountKeyFlag,
 	}
 )
