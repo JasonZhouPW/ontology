@@ -66,16 +66,20 @@ func (this *WasmVmService) Invoke() (interface{}, error) {
 	stateMachine.Register("ONT_Block_GetTransactionsByBlkHeight", this.blockGetTransactionsByBlkHeight)
 
 	//blockchain
-	stateMachine.Register("ONT_BlockChain_GetHeight", this.blockChainGetHeight)
-	stateMachine.Register("ONT_BlockChain_GetHeaderByHeight", this.blockChainGetHeaderByHeight)
-	stateMachine.Register("ONT_BlockChain_GetHeaderByHash", this.blockChainGetHeaderByHash)
-	stateMachine.Register("ONT_BlockChain_GetBlockByHeight", this.blockChainGetBlockByHeight)
-	stateMachine.Register("ONT_BlockChain_GetBlockByHash", this.blockChainGetBlockByHash)
-	stateMachine.Register("ONT_BlockChain_GetContract", this.blockChainGetContract)
+	//these apis will be delete for the memory limit
+	//stateMachine.Register("ONT_BlockChain_GetHeight", this.blockChainGetHeight)
+	//stateMachine.Register("ONT_BlockChain_GetHeaderByHeight", this.blockChainGetHeaderByHeight)
+	//stateMachine.Register("ONT_BlockChain_GetHeaderByHash", this.blockChainGetHeaderByHash)
+	//stateMachine.Register("ONT_BlockChain_GetBlockByHeight", this.blockChainGetBlockByHeight)
+	//stateMachine.Register("ONT_BlockChain_GetBlockByHash", this.blockChainGetBlockByHash)
+	//stateMachine.Register("ONT_BlockChain_GetContract", this.blockChainGetContract)
 
 	//header
-	stateMachine.Register("ONT_Header_GetHash", this.headerGetHash)
-	stateMachine.Register("ONT_Header_GetVersion", this.headerGetVersion)
+	stateMachine.Register("ONT_Header_GetHashByHeight", this.headerGetHash)
+	stateMachine.Register("ONT_Header_GetVersionByHeight", this.headerGetVersionByHash)
+	stateMachine.Register("ONT_Header_GetVersionByHash", this.headerGetVersionByHeight)
+
+
 	stateMachine.Register("ONT_Header_GetPrevHash", this.headerGetPrevHash)
 	stateMachine.Register("ONT_Header_GetMerkleRoot", this.headerGetMerkleRoot)
 	stateMachine.Register("ONT_Header_GetIndex", this.headerGetIndex)
