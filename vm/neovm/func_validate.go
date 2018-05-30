@@ -25,6 +25,7 @@ import (
 
 	"github.com/ontio/ontology/vm/neovm/errors"
 	"github.com/ontio/ontology/vm/neovm/types"
+	"fmt"
 )
 
 func validateCount1(e *ExecutionEngine) error {
@@ -122,6 +123,7 @@ func validateInvocationStack(e *ExecutionEngine) error {
 }
 
 func validateOpStack(e *ExecutionEngine, desc string) error {
+
 	total := EvaluationStackCount(e)
 	if total < 1 {
 		return errors.ERR_UNDER_STACK_LEN
@@ -129,6 +131,8 @@ func validateOpStack(e *ExecutionEngine, desc string) error {
 	index := PeekBigInteger(e)
 	count := big.NewInt(0)
 	if index.Sign() < 0 || count.Add(index, big.NewInt(2)).Cmp(big.NewInt(int64(total))) > 0 {
+		fmt.Printf("==validateOpStack total:%d,index: %v\n",total,index.Int64())
+		fmt.Printf("==validateOpStack:%v\n",e.EvaluationStack.e)
 		return errors.ERR_BAD_VALUE
 	}
 
@@ -362,12 +366,12 @@ func validatePickItem(e *ExecutionEngine) error {
 	if item == nil {
 		return errors.ERR_BAD_VALUE
 	}
-	if _, ok := item.(*types.Array); !ok {
-		return errors.ERR_NOT_ARRAY
-	}
-	if index.Cmp(big.NewInt(int64(len(item.GetArray())))) >= 0 {
-		return errors.ERR_OVER_MAX_ARRAY_SIZE
-	}
+	//if _, ok := item.(*types.Array); !ok {
+	//	return errors.ERR_NOT_ARRAY
+	//}
+	//if index.Cmp(big.NewInt(int64(len(item.GetArray())))) >= 0 {
+	//	return errors.ERR_OVER_MAX_ARRAY_SIZE
+	//}
 	return nil
 }
 
@@ -387,7 +391,17 @@ func validatorSetItem(e *ExecutionEngine) error {
 	if item == nil {
 		return errors.ERR_BAD_VALUE
 	}
+
+
 	if index.Cmp(big.NewInt(int64(len(item.GetArray())))) >= 0 {
+		fmt.Println("validatorSetItem error")
+
+		switch item.(type) {
+		case *types.Map:
+			fmt.Println("it's a map")
+			return nil
+		}
+
 		return errors.ERR_OVER_MAX_ARRAY_SIZE
 	}
 	return nil
@@ -403,6 +417,7 @@ func validateNewArray(e *ExecutionEngine) error {
 		return errors.ERR_BAD_VALUE
 	}
 	if count.Cmp(big.NewInt(int64(MAX_ARRAY_SIZE))) > 0 {
+		fmt.Println("validateNewArray error")
 		return errors.ERR_OVER_MAX_ARRAY_SIZE
 	}
 	return nil
@@ -422,6 +437,12 @@ func validateNewStruct(e *ExecutionEngine) error {
 	}
 	return nil
 }
+
+func validateNewMap(e *ExecutionEngine) error{
+	//todo add validator function
+	return nil
+}
+
 
 func validateAppend(e *ExecutionEngine) error {
 	if err := LogStackTrace(e, 2, "[validateAppend]"); err != nil {
@@ -464,6 +485,7 @@ func CheckBigInteger(value *big.Int) bool {
 
 func LogStackTrace(e *ExecutionEngine, needStackCount int, desc string) error {
 	stackCount := EvaluationStackCount(e)
+
 	if stackCount < needStackCount {
 		return errors.ERR_UNDER_STACK_LEN
 	}

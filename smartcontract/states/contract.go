@@ -67,7 +67,6 @@ func (this *Contract) Deserialize(r io.Reader) error {
 	if err != nil {
 		return errors.NewDetailErr(err, errors.ErrNoCode, "[Contract] Version deserialize error!")
 	}
-
 	this.Code, err = serialization.ReadVarBytes(r)
 	if err != nil {
 		return errors.NewDetailErr(err, errors.ErrNoCode, "[Contract] Code deserialize error!")

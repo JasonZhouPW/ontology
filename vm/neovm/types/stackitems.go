@@ -32,4 +32,6 @@ type StackItems interface {
 	GetInterface() interfaces.Interop
 	GetArray() []StackItems
 	GetStruct() []StackItems
+	//add map
+	GetMap() map[StackItems]StackItems
 }

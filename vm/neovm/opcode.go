@@ -138,7 +138,8 @@ const (
 	PICKITEM  OpCode = 0xC3
 	SETITEM   OpCode = 0xC4
 	NEWARRAY  OpCode = 0xC5
-	NEWSTRUCT        = 0xC6
+	NEWSTRUCT OpCode = 0xC6
+	NEWMAP    OpCode = 0xC7
 	APPEND    OpCode = 0xC8
 	REVERSE   OpCode = 0xC9
 

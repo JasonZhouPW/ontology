@@ -22,6 +22,7 @@ import (
 	"testing"
 
 	"github.com/ontio/ontology/smartcontract/types"
+	"github.com/ontio/ontology/common"
 )
 
 func TestContract_Serialize_Deserialize(t *testing.T) {
@@ -44,6 +45,15 @@ func TestContract_Serialize_Deserialize(t *testing.T) {
 		t.Fatalf("Contract serialize error: %v", err)
 	}
 
+	v := new(Contract)
+	if err := v.Deserialize(bf); err != nil {
+		t.Fatalf("Contract deserialize error: %v", err)
+	}
+}
+
+func TestContract_Serialize(t *testing.T) {
+	bs,_ := common.HexToBytes("0000ff00000000000000000000000000000000000001087472616e7366657231010112c8b2a5d8d6eba7a5a66e30fabf74dcf664e001c34d1f90cc20607aa63e717340827ee78db7a9f401000000000000")
+	bf := bytes.NewBuffer(bs)
 	v := new(Contract)
 	if err := v.Deserialize(bf); err != nil {
 		t.Fatalf("Contract deserialize error: %v", err)

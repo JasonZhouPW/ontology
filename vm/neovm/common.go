@@ -26,6 +26,7 @@ import (
 
 	"github.com/ontio/ontology/vm/neovm/interfaces"
 	"github.com/ontio/ontology/vm/neovm/types"
+	"fmt"
 )
 
 type BigIntSorter []big.Int
@@ -190,6 +191,11 @@ func WithInOp(int1 *big.Int, int2 *big.Int, int3 *big.Int) bool {
 
 func NewStackItem(data interface{}) types.StackItems {
 	var stackItem types.StackItems
+
+	if data == nil{
+		return nil
+	}
+
 	switch data.(type) {
 	case int8, int16, int32, int64, int, uint8, uint16, uint32, uint64, *big.Int, big.Int:
 		stackItem = types.NewInteger(ToBigInt(data))
@@ -213,7 +219,10 @@ func NewStackItem(data interface{}) types.StackItems {
 		stackItem = data.(types.StackItems)
 	case interfaces.Interop:
 		stackItem = types.NewInteropInterface(data.(interfaces.Interop))
+	case types.Map:
+		stackItem = types.NewMap()
 	default:
+		fmt.Printf("data is %v\n",data)
 		panic("NewStackItemInterface Invalid Type!")
 	}
 	return stackItem
@@ -254,6 +263,11 @@ func PopBoolean(e *ExecutionEngine) bool {
 func PopArray(e *ExecutionEngine) []types.StackItems {
 	x := PopStackItem(e)
 	return x.GetArray()
+}
+
+func PopMap(e *ExecutionEngine) map[types.StackItems]types.StackItems {
+	x := PopStackItem(e)
+	return x.GetMap()
 }
 
 func PopInteropInterface(e *ExecutionEngine) interfaces.Interop {

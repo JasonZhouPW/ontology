@@ -27,6 +27,7 @@ import (
 	scommon "github.com/ontio/ontology/smartcontract/common"
 	"github.com/ontio/ontology/smartcontract/event"
 	vm "github.com/ontio/ontology/vm/neovm"
+	"fmt"
 )
 
 // HeaderGetNextConsensus put current block time to vm stack
@@ -61,6 +62,8 @@ func RuntimeCheckWitness(service *NeoVmService, engine *vm.ExecutionEngine) erro
 // RuntimeNotify put smart contract execute event notify to notifications
 func RuntimeNotify(service *NeoVmService, engine *vm.ExecutionEngine) error {
 	item := vm.PopStackItem(engine)
+	fmt.Printf("RuntimeNotify %v\n",item)
+
 	context := service.ContextRef.CurrentContext()
 	service.Notifications = append(service.Notifications, &event.NotifyEventInfo{ContractAddress: context.ContractAddress, States: scommon.ConvertNeoVmTypeHexString(item)})
 	return nil
@@ -69,6 +72,7 @@ func RuntimeNotify(service *NeoVmService, engine *vm.ExecutionEngine) error {
 // RuntimeLog push smart contract execute event log to client
 func RuntimeLog(service *NeoVmService, engine *vm.ExecutionEngine) error {
 	item := vm.PopByteArray(engine)
+	fmt.Printf("runtimelog item is %s\n",item)
 	context := service.ContextRef.CurrentContext()
 	txHash := service.Tx.Hash()
 	event.PushSmartCodeEvent(txHash, 0, event.EVENT_LOG, &event.LogEventArgs{TxHash: txHash, ContractAddress: context.ContractAddress, Message: string(item)})

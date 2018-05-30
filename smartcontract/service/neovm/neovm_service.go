@@ -29,6 +29,7 @@ import (
 	"github.com/ontio/ontology/smartcontract/states"
 	"github.com/ontio/ontology/smartcontract/storage"
 	vm "github.com/ontio/ontology/vm/neovm"
+	"bytes"
 )
 
 const (
@@ -77,6 +78,10 @@ var (
 		GETEXECUTINGSCRIPTHASH_NAME:     {Execute: GetExecutingAddress},
 		GETCALLINGSCRIPTHASH_NAME:       {Execute: GetCallingAddress},
 		GETENTRYSCRIPTHASH_NAME:         {Execute: GetEntryAddress},
+
+		SERIALIZECONTRACT_NAME:			 {Execute: SerializeContract},
+		SERIALIZETRANSFER_NAME:			 {Execute: SerializeTransfer},
+
 	}
 )
 
@@ -142,16 +147,35 @@ func (this *NeoVmService) Invoke() (interface{}, error) {
 				return nil, ERR_GAS_INSUFFICIENT
 			}
 		}
+		fmt.Printf("opcode is 0x%x\n",engine.OpCode)
 		switch engine.OpCode {
 		case vm.SYSCALL:
+			fmt.Printf("===opcode syscall is 0x%x\n",engine.OpCode)
+
 			if err := this.SystemCall(engine); err != nil {
+				fmt.Printf("error is syscall :%s\n",err.Error())
 				return nil, errors.NewDetailErr(err, errors.ErrNoCode, "[NeoVmService] service system call error!")
 			}
 		case vm.APPCALL, vm.TAILCALL:
+			fmt.Printf("===opcode appcall is 0x%x\n",engine.OpCode)
 			c := new(states.Contract)
-			if err := c.Deserialize(engine.Context.OpReader.Reader()); err != nil {
-				return nil, errors.NewDetailErr(err, errors.ErrNoCode, "[NeoVmService] get contract parameters error!")
+			item := vm.PopStackItem(engine)
+			if item == nil{
+				fmt.Println("===APPCALL branch 1==")
+				if err := c.Deserialize(engine.Context.OpReader.Reader()); err != nil {
+					fmt.Printf("appcall error is %s\n",err.Error())
+					return nil, errors.NewDetailErr(err, errors.ErrNoCode, "[NeoVmService] get contract parameters error!")
+				}
+			}else{
+				fmt.Println("===APPCALL branch 2==")
+				bs := item.GetByteArray()
+				if err := c.Deserialize(bytes.NewBuffer(bs)); err != nil {
+					fmt.Printf("appcall error is %s\n",err.Error())
+					return nil, errors.NewDetailErr(err, errors.ErrNoCode, "[NeoVmService] get contract parameters error!")
+				}
 			}
+
+			fmt.Printf("==c.Address:%s,c.Method:%s,c.Args:%v\n",c.Address.ToHexString(),c.Method,c.Args)
 			result, err := this.ContextRef.AppCall(c.Address, c.Method, c.Code, c.Args)
 			if err != nil {
 				return nil, errors.NewDetailErr(err, errors.ErrNoCode, "[NeoVmService] service app call error!")
@@ -161,6 +185,7 @@ func (this *NeoVmService) Invoke() (interface{}, error) {
 			}
 		default:
 			if err := engine.StepInto(); err != nil {
+				fmt.Printf("vm execute err:%s\n",err.Error())
 				return nil, errors.NewDetailErr(err, errors.ErrNoCode, "[NeoVmService] vm execute error!")
 			}
 		}
@@ -175,6 +200,7 @@ func (this *NeoVmService) Invoke() (interface{}, error) {
 // SystemCall provide register service for smart contract to interaction with blockchain
 func (this *NeoVmService) SystemCall(engine *vm.ExecutionEngine) error {
 	serviceName := engine.Context.OpReader.ReadVarString()
+	fmt.Printf("syscall serviceName is %s\n",serviceName)
 	service, ok := ServiceMap[serviceName]
 	if !ok {
 		return errors.NewErr(fmt.Sprintf("[SystemCall] service not support: %s", serviceName))

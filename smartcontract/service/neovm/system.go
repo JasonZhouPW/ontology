@@ -19,7 +19,11 @@
 package neovm
 
 import (
+	"bytes"
+	"github.com/ontio/ontology/common"
 	"github.com/ontio/ontology/errors"
+	"github.com/ontio/ontology/smartcontract/service/native/ont"
+	"github.com/ontio/ontology/smartcontract/states"
 	vm "github.com/ontio/ontology/vm/neovm"
 )
 
@@ -56,5 +60,82 @@ func GetEntryAddress(service *NeoVmService, engine *vm.ExecutionEngine) error {
 		return errors.NewErr("Entry context invalid")
 	}
 	vm.PushData(engine, context.ContractAddress[:])
+	return nil
+}
+
+//serialize contract to bytes
+func SerializeContract(service *NeoVmService, engine *vm.ExecutionEngine) error {
+
+/*	version := vm.PopBigInt(engine).Int64()
+	code := vm.PopByteArray(engine)
+	contractAddr := vm.PopByteArray(engine)
+	method := vm.PopByteArray(engine)
+	args := vm.PopByteArray(engine)*/
+	args := vm.PopByteArray(engine)
+	method := vm.PopByteArray(engine)
+	contractAddr := vm.PopByteArray(engine)
+	code := vm.PopByteArray(engine)
+	version := vm.PopBigInt(engine).Int64()
+
+	addrbytes, err := common.HexToBytes(string(contractAddr))
+	if err != nil {
+		return err
+	}
+	address, err := common.AddressParseFromBytes(addrbytes)
+	if err != nil {
+		return err
+	}
+
+	if len(code) == 0{
+		code = nil
+	}
+
+	contract := &states.Contract{Version: byte(version),
+		Code:    code,
+		Address: address,
+		Method:  string(method),
+		Args:    args}
+
+	bf := bytes.NewBuffer(nil)
+	err = contract.Serialize(bf)
+	if err != nil {
+		return err
+	}
+
+	vm.PushData(engine, bf.Bytes())
+
+	return nil
+}
+
+func SerializeTransfer(service *NeoVmService, engine *vm.ExecutionEngine) error {
+
+	from := vm.PopByteArray(engine)
+	to := vm.PopByteArray(engine)
+	amount := vm.PopBigInt(engine).Int64()
+
+	fAddr, err := common.AddressParseFromBytes(from)
+	if err != nil {
+		return err
+	}
+	tAddr, err := common.AddressParseFromBytes(to)
+	if err != nil {
+		return err
+	}
+
+	state := &ont.State{From: fAddr,
+		To:    tAddr,
+		Value: uint64(amount)}
+
+	tranfer := ont.Transfers{
+		States: []*ont.State{state},
+	}
+	bf := bytes.NewBuffer(nil)
+	err = tranfer.Serialize(bf)
+	if err != nil {
+		return err
+	}
+
+	vm.PushData(engine, bf.Bytes())
+
 	return nil
 }

@@ -138,6 +138,7 @@ var (
 		SETITEM:   {Opcode: SETITEM, Name: "SETITEM", Exec: opSetItem, Validator: validatorSetItem},
 		NEWARRAY:  {Opcode: NEWARRAY, Name: "NEWARRAY", Exec: opNewArray, Validator: validateNewArray},
 		NEWSTRUCT: {Opcode: NEWSTRUCT, Name: "NEWSTRUCT", Exec: opNewStruct, Validator: validateNewStruct},
+		NEWMAP:    {Opcode: NEWSTRUCT, Name: "NEWMAP", Exec: opNewMap, Validator: validateNewMap},
 		APPEND:    {Opcode: APPEND, Name: "APPEND", Exec: opAppend, Validator: validateAppend},
 		REVERSE:   {Opcode: REVERSE, Name: "REVERSE", Exec: opReverse, Validator: validatorReverse},
 

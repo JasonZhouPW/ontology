@@ -60,6 +60,11 @@ func ConvertNeoVmTypeHexString(item interface{}) interface{} {
 		return arr
 	case *types.Interop:
 		return common.ToHexString(v.GetInterface().ToArray())
+	case *types.Map:
+
+		m :=types.NewMap()
+		m.NewValue(v.GetMap())
+		return common.ToHexString(m.ToArray())
 	default:
 		log.Error("[ConvertTypes] Invalid Types!")
 		return nil
@@ -95,6 +100,10 @@ func ConvertNeoVmReturnTypes(item interface{}) interface{} {
 		return arr
 	case *types.Interop:
 		return v.GetInterface().ToArray()
+	case *types.Map:
+		m :=types.NewMap()
+		m.NewValue(v.GetMap())
+		return common.ToHexString(m.ToArray())
 	default:
 		log.Error("[ConvertTypes] Invalid Types!")
 		return nil
