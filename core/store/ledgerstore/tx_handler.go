@@ -62,9 +62,9 @@ func (self *StateStore) HandleDeployTransaction(store store.LedgerStore, stateBa
 		}
 		originAddress = targetAddress
 	} else {
-		if err := isBalanceSufficient(tx, stateBatch); err != nil {
-			return err
-		}
+		//if err := isBalanceSufficient(tx, stateBatch); err != nil {
+		//	return err
+		//}
 
 		cache := storage.NewCloneCache(stateBatch)
 
@@ -79,6 +79,7 @@ func (self *StateStore) HandleDeployTransaction(store store.LedgerStore, stateBa
 		if err != nil {
 			return err
 		}
+
 		cache.Commit()
 	}
 
@@ -203,6 +204,7 @@ func genNativeTransferCode(contract, from, to common.Address, value uint64) styp
 func isBalanceSufficient(tx *types.Transaction, stateBatch *statestore.StateBatch) error {
 	balance, err := getBalance(stateBatch, tx.Payer, utils.OngContractAddress)
 	if err != nil {
+		fmt.Printf("isBalanceSufficient err is %s\n",err.Error())
 		return err
 	}
 	if balance < tx.GasLimit*tx.GasPrice {

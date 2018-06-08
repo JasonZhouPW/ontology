@@ -35,6 +35,7 @@ import (
 	"github.com/ontio/ontology/smartcontract/storage"
 	stypes "github.com/ontio/ontology/smartcontract/types"
 	vm "github.com/ontio/ontology/vm/neovm"
+	"fmt"
 )
 
 var (
@@ -176,6 +177,7 @@ func (this *SmartContract) AppCall(address common.Address, method string, codes,
 		}
 		code = bf.Bytes()
 	case stypes.NEOVM:
+		fmt.Printf("neo address is %s\n",address.ToHexString())
 		c, err := this.loadCode(address, codes)
 		if err != nil {
 			return nil, err

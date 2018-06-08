@@ -25,6 +25,7 @@ import (
 
 	"github.com/ontio/ontology/vm/neovm/errors"
 	"github.com/ontio/ontology/vm/neovm/types"
+	"fmt"
 )
 
 func validateCount1(e *ExecutionEngine) error {
@@ -364,13 +365,15 @@ func validatePickItem(e *ExecutionEngine) error {
 	}
 
 	switch item.(type) {
-	case *types.Array:
+	case *types.Array,*types.Struct:
 		if index.Cmp(big.NewInt(int64(len(item.GetArray())))) >= 0 {
+			fmt.Printf("==validatePickItem: index:%d,len:%d\n",index.Int64(),len(item.GetArray()))
 			return errors.ERR_OVER_MAX_ARRAY_SIZE
 		}
 	case *types.Map:
 		//check nothing
 	default:
+		fmt.Printf("item is %v\n",item)
 		return errors.ERR_NOT_SUPPORT_TYPE
 
 	}

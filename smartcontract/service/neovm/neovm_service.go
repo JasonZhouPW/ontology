@@ -146,6 +146,7 @@ func (this *NeoVmService) Invoke() (interface{}, error) {
 				return nil, ERR_GAS_INSUFFICIENT
 			}
 		}
+		fmt.Printf("opcode :0x%x\n",engine.OpCode)
 		switch engine.OpCode {
 		case vm.SYSCALL:
 			if err := this.SystemCall(engine); err != nil {
@@ -154,10 +155,12 @@ func (this *NeoVmService) Invoke() (interface{}, error) {
 		case vm.APPCALL, vm.TAILCALL:
 			c := new(states.Contract)
 			if err := c.Deserialize(engine.Context.OpReader.Reader()); err != nil {
+				fmt.Printf("err1 is %s\n",err.Error())
 				return nil, errors.NewDetailErr(err, errors.ErrNoCode, "[NeoVmService] get contract parameters error!")
 			}
 			result, err := this.ContextRef.AppCall(c.Address, c.Method, c.Code, c.Args)
 			if err != nil {
+				fmt.Printf("err2 is %s\n",err.Error())
 				return nil, errors.NewDetailErr(err, errors.ErrNoCode, "[NeoVmService] service app call error!")
 			}
 			if result != nil {

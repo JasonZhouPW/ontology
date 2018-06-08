@@ -23,6 +23,7 @@ import (
 
 	"github.com/ontio/ontology/errors"
 	"github.com/ontio/ontology/vm/neovm/types"
+	"fmt"
 )
 
 func opArraySize(e *ExecutionEngine) (VMState, error) {
@@ -61,13 +62,20 @@ func opPickItem(e *ExecutionEngine) (VMState, error) {
 	items := PopStackItem(e)
 
 	switch items.(type) {
-	case *types.Array:
+	case *types.Array,*types.Struct:
 		i := int(index.GetBigInteger().Int64())
 		if i < 0 || i >= len(items.GetArray()) {
+			fmt.Printf("----i :%d,len :%d\n",i,len(items.GetArray()))
 			return NONE, errors.NewErr("invalid array.")
 		}
+		fmt.Printf("opPickItem :value:%v\n",items.GetArray()[i])
+		for _,it :=range items.GetArray()[i].GetArray(){
+			fmt.Printf("array item is %s\n",it.GetByteArray())
+		}
+
 		PushData(e, items.GetArray()[i])
 	case *types.Map:
+
 		value := items.(*types.Map).TryGetValue(index)
 		if value == nil { //todo should return a nil type when not exist?
 			return NONE, errors.NewErr("invalid map element.")
@@ -96,14 +104,25 @@ func opSetItem(e *ExecutionEngine) (VMState, error) {
 		mapitem := item.GetMap()
 		mapitem[index] = newItem
 
-	case *types.Array:
+	case *types.Array,*types.Struct:
 		items := item.GetArray()
+		fmt.Printf("==opSetItem before items :%v\n",items)
+
 		i := int(index.GetBigInteger().Int64())
 		if i < 0 || i >= len(items) {
+			fmt.Printf("----i :%d,len :%d\n",i,len(items))
+
 			return NONE, errors.NewErr("invalid array.")
 		}
+		fmt.Printf("==opSetItem i :%v\n",i)
+
 		items[i] = newItem
+
+		fmt.Printf("==opSetItem after items :%v\n",items)
+
 	default:
+		fmt.Printf("opsetitem default : %v\n",item)
+
 		return NONE, errors.NewErr("invalid item type.")
 	}
 
