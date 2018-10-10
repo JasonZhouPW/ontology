@@ -29,7 +29,7 @@ import (
 	"github.com/ontio/ontology/smartcontract/service/native"
 	"github.com/ontio/ontology/smartcontract/service/neovm"
 	"github.com/ontio/ontology/smartcontract/storage"
-	vm "github.com/ontio/ontology/vm/neovm"
+	"github.com/ontio/ontology/smartcontract/service/wasmvm"
 )
 
 const (
@@ -125,16 +125,35 @@ func (this *SmartContract) NewExecuteEngine(code []byte) (context.Engine, error)
 	if !this.checkContexts() {
 		return nil, fmt.Errorf("%s", "engine over max limit!")
 	}
-	service := &neovm.NeoVmService{
-		Store:      this.Store,
-		CacheDB:    this.CacheDB,
+
+	//service := &neovm.NeoVmService{
+	//	Store:      this.Store,
+	//	CacheDB:    this.CacheDB,
+
+
+	//todo replace with wasm_service
+	//service := &neovm.NeoVmService{
+	//	Store:      this.Store,
+	//	CloneCache: this.CloneCache,
+	//	ContextRef: this,
+	//	Code:       code,
+	//	Tx:         this.Config.Tx,
+	//	Time:       this.Config.Time,
+	//	Height:     this.Config.Height,
+	//	Engine:     vm.NewExecutionEngine(),
+	//}
+	service := &wasmvm.WasmVmService{
+		Store:this.Store,
+		CacheDB: this.CacheDB,
 		ContextRef: this,
 		Code:       code,
 		Tx:         this.Config.Tx,
 		Time:       this.Config.Time,
 		Height:     this.Config.Height,
 		RandomHash: this.Config.RandomHash,
-		Engine:     vm.NewExecutionEngine(),
+		//Engine:     vm.NewExecutionEngine(),
+		//Engine:     exec.NewExecutionEngine(),
+
 	}
 	return service, nil
 }
