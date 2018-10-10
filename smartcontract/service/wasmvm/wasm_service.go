@@ -381,6 +381,7 @@ func (this *WasmVmService) nativeInvoke(engine *exec.ExecutionEngine) (bool, err
 		Time:        this.Time,
 		ContextRef:  this.ContextRef,
 		ServiceMap:  make(map[string]native.Handler),
+
 	}
 
 	result, err := native.Invoke()
