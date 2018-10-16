@@ -184,6 +184,7 @@ func SetGlobalParam(native *native.NativeService) ([]byte, error) {
 }
 
 func GetGlobalParam(native *native.NativeService) ([]byte, error) {
+	fmt.Printf("===GetGlobalParam===%v\n",native.Input)
 	var paramNameList ParamNameList
 	if err := paramNameList.Deserialize(bytes.NewBuffer(native.Input)); err != nil {
 		return utils.BYTE_FALSE, errors.NewErr("get param, deserialize failed!")

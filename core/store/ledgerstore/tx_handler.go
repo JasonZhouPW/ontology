@@ -295,6 +295,7 @@ func chargeCostGas(payer common.Address, gas uint64, config *smartcontract.Confi
 }
 
 func refreshGlobalParam(config *smartcontract.Config, cache *storage.CacheDB, store store.LedgerStore) error {
+
 	bf := new(bytes.Buffer)
 	if err := utils.WriteVarUint(bf, uint64(len(neovm.GAS_TABLE_KEYS))); err != nil {
 		return fmt.Errorf("write gas_table_keys length error:%s", err)

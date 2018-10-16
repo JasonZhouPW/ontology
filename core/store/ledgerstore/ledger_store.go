@@ -270,6 +270,7 @@ func (this *LedgerStoreImp) initHeaderIndexList() error {
 }
 
 func (this *LedgerStoreImp) initStore() error {
+	fmt.Println("==initStore==")
 	blockHeight := this.GetCurrentBlockHeight()
 
 	_, stateHeight, err := this.stateStore.GetCurrentBlock()
@@ -544,6 +545,7 @@ func (this *LedgerStoreImp) AddBlock(block *types.Block) error {
 }
 
 func (this *LedgerStoreImp) saveBlockToBlockStore(block *types.Block) error {
+	fmt.Println("==saveBlockToBlockStore==")
 	blockHash := block.Hash()
 	blockHeight := block.Header.Height
 
@@ -565,6 +567,7 @@ func (this *LedgerStoreImp) saveBlockToBlockStore(block *types.Block) error {
 }
 
 func (this *LedgerStoreImp) saveBlockToStateStore(block *types.Block) error {
+	fmt.Println("==saveBlockToStateStore===")
 	blockHash := block.Hash()
 	blockHeight := block.Header.Height
 
@@ -646,6 +649,7 @@ func (this *LedgerStoreImp) resetSavingBlock() {
 
 //saveBlock do the job of execution samrt contract and commit block to store.
 func (this *LedgerStoreImp) saveBlock(block *types.Block) error {
+	fmt.Println("==saveBlock==")
 	blockHash := block.Hash()
 	blockHeight := block.Header.Height
 	if this.isSavingBlock() {
@@ -685,7 +689,7 @@ func (this *LedgerStoreImp) saveBlock(block *types.Block) error {
 		return fmt.Errorf("eventStore.CommitTo height:%d error %s", blockHeight, err)
 	}
 	this.setCurrentBlock(blockHeight, blockHash)
-
+	fmt.Println("save block end")
 	if events.DefActorPublisher != nil {
 		events.DefActorPublisher.Publish(
 			message.TOPIC_SAVE_BLOCK_COMPLETE,
