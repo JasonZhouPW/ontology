@@ -79,5 +79,6 @@ func BuildNativeTransaction(addr common.Address, initMethod string, args []byte)
 
 //add for wasm vm native transaction call
 func BuildWasmNativeTransaction(addr common.Address, initMethod string, args []byte) *types.MutableTransaction {
-	bf := new(bytes.Buffer)
+	//bf := new(bytes.Buffer)
+	return nil
 }
