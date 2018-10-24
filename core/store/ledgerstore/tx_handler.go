@@ -33,7 +33,6 @@ import (
 	scommon "github.com/ontio/ontology/core/store/common"
 	"github.com/ontio/ontology/core/store/overlaydb"
 	"github.com/ontio/ontology/core/types"
-	"github.com/ontio/ontology/errors"
 	"github.com/ontio/ontology/smartcontract"
 	"github.com/ontio/ontology/smartcontract/event"
 	"github.com/ontio/ontology/smartcontract/service/native/global_params"
@@ -43,6 +42,8 @@ import (
 	"github.com/ontio/ontology/smartcontract/service/neovm"
 	"github.com/ontio/ontology/smartcontract/storage"
 	ntypes "github.com/ontio/ontology/vm/neovm/types"
+	"encoding/json"
+	utils2 "github.com/ontio/ontology/core/utils"
 )
 
 //HandleDeployTransaction deal with smart contract deploy transaction
@@ -56,7 +57,9 @@ func (self *StateStore) HandleDeployTransaction(store store.LedgerStore, overlay
 	)
 
 	cache := storage.NewCacheDB(overlay)
-	if tx.GasPrice != 0 {
+
+	//todo modify to WASM gas compute
+	/*if tx.GasPrice != 0 {
 		// init smart contract configuration info
 		config := &smartcontract.Config{
 			Time:       block.Header.Timestamp,
@@ -98,7 +101,7 @@ func (self *StateStore) HandleDeployTransaction(store store.LedgerStore, overlay
 		}
 		cache.Commit()
 	}
-
+*/
 	address := deploy.Address()
 	log.Infof("deploy contract address:%s", address.ToHexString())
 	// store contract message
@@ -125,6 +128,21 @@ func (self *StateStore) HandleInvokeTransaction(store store.LedgerStore, overlay
 	sysTransFlag := bytes.Compare(code, ninit.COMMIT_DPOS_BYTES) == 0 || block.Header.Height == 0
 
 	isCharge := !sysTransFlag && tx.GasPrice != 0
+	txStruct := &utils2.TxStruct{}
+	fmt.Printf("code is  %v\n", code)
+	errs := json.Unmarshal(code, txStruct)
+	if errs != nil{
+		fmt.Println("HandleInvokeTransaction err:"+errs.Error())
+		return errs
+	}
+	fmt.Printf("txStruct is %v\n",txStruct)
+
+	address := txStruct.Address
+	if isNativeContract(address){
+		fmt.Printf("it's a native contract:%v\n",address)
+
+	}
+
 
 	// init smart contract configuration info
 	config := &smartcontract.Config{
@@ -137,16 +155,18 @@ func (self *StateStore) HandleInvokeTransaction(store store.LedgerStore, overlay
 	var (
 		costGasLimit      uint64
 		costGas           uint64
-		oldBalance        uint64
+		//oldBalance        uint64
 		newBalance        uint64
 		codeLenGasLimit   uint64
 		availableGasLimit uint64
-		minGas            uint64
+		//minGas            uint64
 		err               error
 	)
 	cache := storage.NewCacheDB(overlay)
 	availableGasLimit = tx.GasLimit
-	if isCharge {
+	//todo replace with wasm vm
+
+	/*if isCharge {
 		uintCodeGasPrice, ok := neovm.GAS_TABLE.Load(neovm.UINT_INVOKE_CODE_LEN_NAME)
 		if !ok {
 			overlay.SetError(errors.NewErr("[HandleInvokeTransaction] get UINT_INVOKE_CODE_LEN_NAME gas failed"))
@@ -188,7 +208,7 @@ func (self *StateStore) HandleInvokeTransaction(store store.LedgerStore, overlay
 			availableGasLimit = maxAvaGasLimit
 		}
 	}
-
+*/
 	//init smart contract info
 	sc := smartcontract.SmartContract{
 		Config:  config,
@@ -372,4 +392,19 @@ func costInvalidGas(address common.Address, gas uint64, config *smartcontract.Co
 
 func calcGasByCodeLen(codeLen int, codeGas uint64) uint64 {
 	return uint64(codeLen/neovm.PER_UNIT_CODE_LEN) * codeGas
+}
+
+
+func isNativeContract(address []byte) bool{
+
+	if bytes.Equal(address, utils.AuthContractAddress[:]) ||
+		bytes.Equal(address, utils.GovernanceContractAddress[:]) ||
+		bytes.Equal(address,utils.OngContractAddress[:])||
+		bytes.Equal(address,utils.OntContractAddress[:])||
+		bytes.Equal(address,utils.OntIDContractAddress[:])||
+		bytes.Equal(address,utils.ParamContractAddress[:]){
+			return true
+	}
+	return false
+
 }

@@ -22,13 +22,23 @@ import (
 	"bytes"
 	"math"
 	"math/big"
+	"encoding/json"
 
 	"github.com/ontio/ontology/common"
 	"github.com/ontio/ontology/core/payload"
 	"github.com/ontio/ontology/core/types"
-	neovm "github.com/ontio/ontology/smartcontract/service/neovm"
+	"github.com/ontio/ontology/smartcontract/service/neovm"
 	vm "github.com/ontio/ontology/vm/neovm"
+
 )
+
+type TxStruct struct {
+	Address []byte	`json:"address"`
+	Method  []byte	`json:"method"`
+	Version int		`json:"version"`
+	Args    []byte	`json:"args"`
+}
+
 
 // NewDeployTransaction returns a deploy Transaction
 func NewDeployTransaction(code []byte, name, version, author, email, desp string, needStorage bool) *types.MutableTransaction {
@@ -74,11 +84,23 @@ func BuildNativeTransaction(addr common.Address, initMethod string, args []byte)
 
 	tx := NewInvokeTransaction(builder.ToArray())
 	tx.GasLimit = math.MaxUint64
+
 	return tx
 }
 
 //add for wasm vm native transaction call
 func BuildWasmNativeTransaction(addr common.Address, initMethod string, args []byte) *types.MutableTransaction {
-	//bf := new(bytes.Buffer)
-	return nil
+	txstruct := TxStruct{
+		Address:addr[:],
+		Method:[]byte(initMethod),
+		Args:args,
+	}
+
+	bs, err := json.Marshal(txstruct)
+	if err != nil{
+		return nil
+	}
+	tx := NewInvokeTransaction(bs)
+	tx.GasLimit = math.MaxUint64
+	return tx
 }

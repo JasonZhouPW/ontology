@@ -62,6 +62,7 @@ var GenesisBookkeepers []keypair.PublicKey
 // BuildGenesisBlock returns the genesis block with default consensus bookkeeper list
 func BuildGenesisBlock(defaultBookkeeper []keypair.PublicKey, genesisConfig *config.GenesisConfig) (*types.Block, error) {
 	//getBookkeeper
+	fmt.Println("===BuildGenesisBlock===")
 	GenesisBookkeepers = defaultBookkeeper
 	nextBookkeeper, err := types.AddressFromBookkeepers(defaultBookkeeper)
 	if err != nil {
