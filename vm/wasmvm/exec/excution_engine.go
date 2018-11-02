@@ -71,14 +71,14 @@ func newStack(depth int) *vmstack {
 }
 
 //todo add parameters
-func NewExecutionEngine(//container interfaces.CodeContainer,
+func NewExecutionEngine( //container interfaces.CodeContainer,
 	crypto interfaces.Crypto,
 	service InteropServiceInterface) *ExecutionEngine {
 
 	engine := &ExecutionEngine{
-		crypto:        crypto,
+		crypto: crypto,
 		//CodeContainer: container,
-		service:       NewInteropService(),
+		service: NewInteropService(),
 	}
 	if service != nil {
 		engine.service.MergeMap(service.GetServiceMap())
@@ -89,11 +89,11 @@ func NewExecutionEngine(//container interfaces.CodeContainer,
 }
 
 type ExecutionEngine struct {
-	crypto        interfaces.Crypto
-	service       *InteropService
+	crypto  interfaces.Crypto
+	service *InteropService
 	//CodeContainer interfaces.CodeContainer
-	vm            *VM
-	backupVM      *vmstack
+	vm       *VM
+	backupVM *vmstack
 }
 
 //GetVM return vm pointer

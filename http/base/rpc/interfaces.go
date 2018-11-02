@@ -21,6 +21,7 @@ package rpc
 import (
 	"bytes"
 	"encoding/hex"
+	"fmt"
 	"github.com/ontio/ontology/common"
 	"github.com/ontio/ontology/common/config"
 	"github.com/ontio/ontology/common/log"
@@ -262,9 +263,11 @@ func GetStorage(params []interface{}) map[string]interface{} {
 // A JSON example for sendrawtransaction method as following:
 //   {"jsonrpc": "2.0", "method": "sendrawtransaction", "params": ["raw transactioin in hex"], "id": 0}
 func SendRawTransaction(params []interface{}) map[string]interface{} {
+	fmt.Printf("===SendRawTransaction param is %v\n",params)
 	if len(params) < 1 {
 		return responsePack(berr.INVALID_PARAMS, nil)
 	}
+
 	var hash common.Uint256
 	switch params[0].(type) {
 	case string:
@@ -278,14 +281,20 @@ func SendRawTransaction(params []interface{}) map[string]interface{} {
 			return responsePack(berr.INVALID_TRANSACTION, "")
 		}
 		hash = txn.Hash()
+		fmt.Println("===SendRawTransaction param 2")
+		fmt.Printf("SendRawTransaction recv %s", hash.ToHexString())
 		log.Debugf("SendRawTransaction recv %s", hash.ToHexString())
 		if txn.TxType == types.Invoke || txn.TxType == types.Deploy {
+			fmt.Println("===SendRawTransaction param 3")
+			fmt.Printf("len(params):%d\n", len(params))
 			if len(params) > 1 {
+				fmt.Println("===SendRawTransaction param 4")
 				preExec, ok := params[1].(float64)
 				if ok && preExec == 1 {
+					fmt.Println("===SendRawTransaction param 5")
+
 					result, err := bactor.PreExecuteContract(txn)
 					if err != nil {
-						log.Infof("PreExec: ", err)
 						return responsePack(berr.SMARTCODE_ERROR, err.Error())
 					}
 					return responseSuccess(result)
@@ -294,6 +303,7 @@ func SendRawTransaction(params []interface{}) map[string]interface{} {
 		}
 
 		log.Debugf("SendRawTransaction send to txpool %s", hash.ToHexString())
+		fmt.Printf("SendRawTransaction send to txpool %s", hash.ToHexString())
 		if errCode, desc := bcomn.SendTxToPool(txn); errCode != ontErrors.ErrNoError {
 			log.Warnf("SendRawTransaction verified %s error: %s", hash.ToHexString(), desc)
 			return responsePack(int64(errCode), desc)
@@ -427,6 +437,7 @@ func GetBlockHeightByTxHash(params []interface{}) map[string]interface{} {
 
 //get balance of address
 func GetBalance(params []interface{}) map[string]interface{} {
+	fmt.Printf("===rpc server GetBalance params:%v\n", params)
 	if len(params) < 1 {
 		return responsePack(berr.INVALID_PARAMS, "")
 	}

@@ -22,6 +22,7 @@ package common
 import (
 	"bytes"
 	"encoding/hex"
+	"encoding/json"
 	"fmt"
 	"github.com/ontio/ontology-crypto/keypair"
 	"github.com/ontio/ontology/common"
@@ -31,12 +32,12 @@ import (
 	"github.com/ontio/ontology/core/ledger"
 	"github.com/ontio/ontology/core/payload"
 	"github.com/ontio/ontology/core/types"
+	cutils "github.com/ontio/ontology/core/utils"
 	ontErrors "github.com/ontio/ontology/errors"
 	bactor "github.com/ontio/ontology/http/base/actor"
 	"github.com/ontio/ontology/smartcontract/event"
 	"github.com/ontio/ontology/smartcontract/service/native/ont"
 	"github.com/ontio/ontology/smartcontract/service/native/utils"
-	svrneovm "github.com/ontio/ontology/smartcontract/service/neovm"
 	"github.com/ontio/ontology/vm/neovm"
 	"math/big"
 	"reflect"
@@ -262,6 +263,7 @@ func GetBlockInfo(block *types.Block) BlockInfo {
 }
 
 func GetBalance(address common.Address) (*BalanceOfRsp, error) {
+	fmt.Println("===bcommon GetBalance")
 	ont, err := GetContractBalance(0, utils.OntContractAddress, address)
 	if err != nil {
 		return nil, fmt.Errorf("get ont balance error:%s", err)
@@ -312,15 +314,23 @@ func GetAllowance(asset string, from, to common.Address) (string, error) {
 }
 
 func GetContractBalance(cVersion byte, contractAddr, accAddr common.Address) (uint64, error) {
-	mutable, err := NewNativeInvokeTransaction(0, 0, contractAddr, cVersion, "balanceOf", []interface{}{accAddr[:]})
+	fmt.Println("==GetContractBalance=")
+
+	mutable, err := NewNativeInvokeTransaction(0, 0, contractAddr, cVersion, "balanceOf", []interface{}{accAddr})
 	if err != nil {
 		return 0, fmt.Errorf("NewNativeInvokeTransaction error:%s", err)
 	}
+	fmt.Println("==GetContractBalance= 1")
+
 	tx, err := mutable.IntoImmutable()
 	if err != nil {
 		return 0, err
 	}
+	fmt.Println("==GetContractBalance= 2")
+
 	result, err := bactor.PreExecuteContract(tx)
+	fmt.Printf("==GetContractBalance result is %v\n", result.Result)
+
 	if err != nil {
 		return 0, fmt.Errorf("PrepareInvokeContract error:%s", err)
 	}
@@ -341,11 +351,23 @@ func GetContractAllowance(cVersion byte, contractAddr, fromAddr, toAddr common.A
 		From common.Address
 		To   common.Address
 	}
-	mutable, err := NewNativeInvokeTransaction(0, 0, contractAddr, cVersion, "allowance",
-		[]interface{}{&allowanceStruct{
-			From: fromAddr,
-			To:   toAddr,
-		}})
+
+	bf := bytes.NewBuffer(nil)
+	err := utils.WriteAddress(bf, fromAddr)
+	if err != nil {
+		return uint64(0), err
+	}
+	err = utils.WriteAddress(bf, toAddr)
+	if err != nil {
+		return uint64(0), err
+	}
+
+	//mutable, err := NewNativeInvokeTransaction(0, 0, contractAddr, cVersion, "allowance",
+	//	[]interface{}{&allowanceStruct{
+	//		From: fromAddr,
+	//		To:   toAddr,
+	//	}})
+	mutable, err := NewNativeInvokeTransaction(0, 0, contractAddr, cVersion, "allowance", []interface{}{fromAddr, toAddr})
 	if err != nil {
 		return 0, fmt.Errorf("NewNativeInvokeTransaction error:%s", err)
 	}
@@ -450,18 +472,75 @@ func NewSmartContractTransaction(gasPrice, gasLimit uint64, invokeCode []byte) (
 	return tx, nil
 }
 
+//func BuildNativeInvokeCode(contractAddress common.Address, version byte, method string, params []interface{}) ([]byte, error) {
+//	builder := neovm.NewParamsBuilder(new(bytes.Buffer))
+//	err := BuildNeoVMParam(builder, params)
+//	if err != nil {
+//		return nil, err
+//	}
+//	builder.EmitPushByteArray([]byte(method))
+//	builder.EmitPushByteArray(contractAddress[:])
+//	builder.EmitPushInteger(new(big.Int).SetInt64(int64(version)))
+//	builder.Emit(neovm.SYSCALL)
+//	builder.EmitPushByteArray([]byte(svrneovm.NATIVE_INVOKE_NAME))
+//	return builder.ToArray(), nil
+//}
+
+//add for wasm vm native transaction call
 func BuildNativeInvokeCode(contractAddress common.Address, version byte, method string, params []interface{}) ([]byte, error) {
-	builder := neovm.NewParamsBuilder(new(bytes.Buffer))
-	err := BuildNeoVMParam(builder, params)
+	fmt.Printf("===BuildNativeInvokeCode  addr:%s, method is %s, params is %v\n",contractAddress.ToHexString(), method, params)
+	bf := bytes.NewBuffer(nil)
+
+	for _, p := range params {
+		switch p.(type) {
+		case common.Address:
+			utils.WriteAddress(bf, p.(common.Address))
+		case uint64:
+			utils.WriteVarUint(bf, p.(uint64))
+		case []*ont.State:
+			utils.WriteVarUint(bf, uint64(len(p.([]*ont.State))))
+			for _, s := range p.([]*ont.State) {
+				utils.WriteAddress(bf, s.From)
+				utils.WriteAddress(bf, s.To)
+				utils.WriteVarUint(bf, s.Value)
+			}
+		case []string:
+			utils.WriteVarUint(bf, uint64(len(p.([]string))))
+			for _, s:= range p.([]string){
+				serialization.WriteVarBytes(bf, []byte(s))
+			}
+		case string:
+			serialization.WriteVarBytes(bf, []byte(p.(string)))
+		case []byte:
+			serialization.WriteVarBytes(bf, p.([]byte))
+		case []interface{}:
+			utils.WriteVarUint(bf, uint64(len(p.([]interface{}))))
+			for _, s:= range p.([]interface{}){
+				serialization.WriteVarBytes(bf, []byte(s.(string)))
+			}
+
+		default:
+			fmt.Printf("===BuildNativeInvokeCode unrecongnized params:%v\n", p)
+		}
+	}
+
+	txstruct := cutils.TxStruct{
+		Address: contractAddress[:],
+		Method:  []byte(method),
+		Version: int(version),
+		Args:    bf.Bytes(),
+	}
+
+	//todo replace with serialize method
+	bs, err := json.Marshal(txstruct)
 	if err != nil {
 		return nil, err
 	}
-	builder.EmitPushByteArray([]byte(method))
-	builder.EmitPushByteArray(contractAddress[:])
-	builder.EmitPushInteger(new(big.Int).SetInt64(int64(version)))
-	builder.Emit(neovm.SYSCALL)
-	builder.EmitPushByteArray([]byte(svrneovm.NATIVE_INVOKE_NAME))
-	return builder.ToArray(), nil
+	fmt.Printf("===BuildNativeInvokeCode bs is %v\n", bs)
+
+	return bs, nil
+
+	//return cutils.BuildWasmNativeTransaction(contractAddress, int(version),method,bf.Bytes()),nil
 }
 
 //BuildNeoVMInvokeCode build NeoVM Invoke code for params

@@ -28,8 +28,8 @@ import (
 	"github.com/ontio/ontology/smartcontract/event"
 	"github.com/ontio/ontology/smartcontract/service/native"
 	"github.com/ontio/ontology/smartcontract/service/neovm"
-	"github.com/ontio/ontology/smartcontract/storage"
 	"github.com/ontio/ontology/smartcontract/service/wasmvm"
+	"github.com/ontio/ontology/smartcontract/storage"
 )
 
 const (
@@ -122,7 +122,7 @@ func (this *SmartContract) checkContexts() bool {
 // Execute is smart contract execute manager
 // According different vm type to launch different service
 func (this *SmartContract) NewExecuteEngine(code []byte) (context.Engine, error) {
-	fmt.Printf("===NewExecuteEngine===%v\n",code)
+	fmt.Printf("===NewExecuteEngine===%v\n", code)
 	if !this.checkContexts() {
 		return nil, fmt.Errorf("%s", "engine over max limit!")
 	}
@@ -130,7 +130,6 @@ func (this *SmartContract) NewExecuteEngine(code []byte) (context.Engine, error)
 	//service := &neovm.NeoVmService{
 	//	Store:      this.Store,
 	//	CacheDB:    this.CacheDB,
-
 
 	//todo replace with wasm_service
 	//service := &neovm.NeoVmService{
@@ -144,8 +143,8 @@ func (this *SmartContract) NewExecuteEngine(code []byte) (context.Engine, error)
 	//	Engine:     vm.NewExecutionEngine(),
 	//}
 	service := &wasmvm.WasmVmService{
-		Store:this.Store,
-		CacheDB: this.CacheDB,
+		Store:      this.Store,
+		CacheDB:    this.CacheDB,
 		ContextRef: this,
 		Code:       code,
 		Tx:         this.Config.Tx,

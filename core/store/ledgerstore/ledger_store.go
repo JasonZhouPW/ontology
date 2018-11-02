@@ -20,6 +20,7 @@ package ledgerstore
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"math"
 	"os"
@@ -41,6 +42,7 @@ import (
 	scom "github.com/ontio/ontology/core/store/common"
 	"github.com/ontio/ontology/core/store/overlaydb"
 	"github.com/ontio/ontology/core/types"
+	cutils "github.com/ontio/ontology/core/utils"
 	"github.com/ontio/ontology/errors"
 	"github.com/ontio/ontology/events"
 	"github.com/ontio/ontology/events/message"
@@ -52,6 +54,7 @@ import (
 	"github.com/ontio/ontology/smartcontract/service/neovm"
 	sstate "github.com/ontio/ontology/smartcontract/states"
 	"github.com/ontio/ontology/smartcontract/storage"
+
 )
 
 const (
@@ -701,6 +704,7 @@ func (this *LedgerStoreImp) saveBlock(block *types.Block) error {
 }
 
 func (this *LedgerStoreImp) handleTransaction(overlay *overlaydb.OverlayDB, block *types.Block, tx *types.Transaction) error {
+	fmt.Println("===handleTransaction")
 	txHash := tx.Hash()
 	notify := &event.ExecuteNotify{TxHash: txHash, State: event.CONTRACT_STATE_FAIL}
 	switch tx.TxType {
@@ -866,14 +870,64 @@ func (this *LedgerStoreImp) PreExecuteContract(tx *types.Transaction) (*sstate.P
 		return stf, err
 	}
 
+	fmt.Printf("preGas is %v\n",preGas)
+
 	if tx.TxType == types.Invoke {
 		invoke := tx.Payload.(*payload.InvokeCode)
+
+		txStruct := &cutils.TxStruct{}
+		fmt.Printf("==invoke.Code:%v\n", invoke.Code)
+		//fmt.Printf("==invoke.Code:%s\n", invoke.Code)
+
+		errs := json.Unmarshal(invoke.Code, txStruct)
+		if errs != nil {
+			fmt.Println("PreExecuteContract err:" + errs.Error())
+			return nil, errs
+		}
 
 		sc := smartcontract.SmartContract{
 			Config:  config,
 			Store:   this,
 			CacheDB: cache,
 			Gas:     math.MaxUint64 - calcGasByCodeLen(len(invoke.Code), preGas[neovm.UINT_INVOKE_CODE_LEN_NAME]),
+		}
+
+		//native contract preexec
+		if IsNativeContract(txStruct.Address) {
+			parsedAddr, err := common.AddressParseFromBytes(txStruct.Address)
+			if err != nil {
+				fmt.Println("parse address error!!")
+				return nil, errors.NewErr("parse address error")
+			}
+			contract := sstate.ContractInvokeParam{
+				Version: byte(txStruct.Version),
+				Address: parsedAddr,
+				Method:  string(txStruct.Method),
+				Args:    txStruct.Args,
+			}
+
+			//native := &native.NativeService{
+			//	CacheDB:     cache,
+			//	InvokeParam: contract,
+			//	Tx:          tx,
+			//	Height:      this.currBlockHeight,
+			//	//Time:        this.GetCurrentBlock(),
+			//	ContextRef: &sc,
+			//	ServiceMap: make(map[string]native.Handler),
+			//}
+			native, err := sc.NewNativeService()
+			native.InvokeParam = contract
+			if err != nil{
+				return nil, err
+			}
+			fmt.Println("before native invoke")
+			result, err := native.Invoke()
+			if err != nil {
+				return nil, err
+			}
+
+			hex := common.ToHexString(result.([]byte))
+			return &sstate.PreExecResult{State: event.CONTRACT_STATE_SUCCESS, Gas: 0, Result: hex}, nil
 		}
 
 		//start the smart contract executive function
@@ -901,6 +955,7 @@ func (this *LedgerStoreImp) PreExecuteContract(tx *types.Transaction) (*sstate.P
 }
 
 func (this *LedgerStoreImp) getPreGas(config *smartcontract.Config, cache *storage.CacheDB) (map[string]uint64, error) {
+	fmt.Println("===getPreGas===")
 	bf := new(bytes.Buffer)
 	names := []string{neovm.CONTRACT_CREATE_NAME, neovm.UINT_INVOKE_CODE_LEN_NAME, neovm.UINT_DEPLOY_CODE_LEN_NAME}
 	if err := utils.WriteVarUint(bf, uint64(len(names))); err != nil {
@@ -925,6 +980,9 @@ func (this *LedgerStoreImp) getPreGas(config *smartcontract.Config, cache *stora
 	if err != nil {
 		return nil, err
 	}
+	fmt.Printf("result is %v\n", result)
+	fmt.Println("===getPreGas=== 2 ")
+
 	params := new(global_params.Params)
 	if err := params.Deserialize(bytes.NewBuffer(result.([]byte))); err != nil {
 		return nil, fmt.Errorf("deserialize global params error:%s", err)

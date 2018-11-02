@@ -20,25 +20,23 @@ package utils
 
 import (
 	"bytes"
+	"encoding/json"
 	"math"
 	"math/big"
-	"encoding/json"
 
 	"github.com/ontio/ontology/common"
 	"github.com/ontio/ontology/core/payload"
 	"github.com/ontio/ontology/core/types"
 	"github.com/ontio/ontology/smartcontract/service/neovm"
 	vm "github.com/ontio/ontology/vm/neovm"
-
 )
 
 type TxStruct struct {
-	Address []byte	`json:"address"`
-	Method  []byte	`json:"method"`
-	Version int		`json:"version"`
-	Args    []byte	`json:"args"`
+	Address []byte `json:"address"`
+	Method  []byte `json:"method"`
+	Version int    `json:"version"`
+	Args    []byte `json:"args"`
 }
-
 
 // NewDeployTransaction returns a deploy Transaction
 func NewDeployTransaction(code []byte, name, version, author, email, desp string, needStorage bool) *types.MutableTransaction {
@@ -89,15 +87,17 @@ func BuildNativeTransaction(addr common.Address, initMethod string, args []byte)
 }
 
 //add for wasm vm native transaction call
-func BuildWasmNativeTransaction(addr common.Address, initMethod string, args []byte) *types.MutableTransaction {
+func BuildWasmNativeTransaction(addr common.Address, version int, initMethod string, args []byte) *types.MutableTransaction {
 	txstruct := TxStruct{
-		Address:addr[:],
-		Method:[]byte(initMethod),
-		Args:args,
+		Address: addr[:],
+		Method:  []byte(initMethod),
+		Version: version,
+		Args:    args,
 	}
 
+	//todo replace with serialize method
 	bs, err := json.Marshal(txstruct)
-	if err != nil{
+	if err != nil {
 		return nil
 	}
 	tx := NewInvokeTransaction(bs)

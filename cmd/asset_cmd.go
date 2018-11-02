@@ -135,6 +135,7 @@ var AssetCommand = cli.Command{
 }
 
 func transfer(ctx *cli.Context) error {
+	fmt.Println("==cmd transfer===")
 	SetRpcPort(ctx)
 	if !ctx.IsSet(utils.GetFlagName(utils.TransactionToFlag)) ||
 		!ctx.IsSet(utils.GetFlagName(utils.TransactionFromFlag)) ||
@@ -222,22 +223,27 @@ func transfer(ctx *cli.Context) error {
 }
 
 func getBalance(ctx *cli.Context) error {
+	fmt.Println("===CMD getBalance ===")
 	SetRpcPort(ctx)
 	if ctx.NArg() < 1 {
 		PrintErrorMsg("Missing account argument.")
 		cli.ShowSubcommandHelp(ctx)
 		return nil
 	}
+	fmt.Println("===CMD getBalance 1===")
 
 	addrArg := ctx.Args().First()
 	accAddr, err := cmdcom.ParseAddress(addrArg, ctx)
 	if err != nil {
 		return err
 	}
+	fmt.Println("===CMD getBalance 2===")
+
 	balance, err := utils.GetBalance(accAddr)
 	if err != nil {
 		return err
 	}
+	fmt.Println("===CMD getBalance 3===")
 
 	ong, err := strconv.ParseUint(balance.Ong, 10, 64)
 	if err != nil {

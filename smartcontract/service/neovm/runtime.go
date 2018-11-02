@@ -24,6 +24,7 @@ import (
 	"reflect"
 	"sort"
 
+	"fmt"
 	"github.com/ontio/ontology-crypto/keypair"
 	"github.com/ontio/ontology/common"
 	"github.com/ontio/ontology/common/serialization"
@@ -33,7 +34,6 @@ import (
 	"github.com/ontio/ontology/smartcontract/event"
 	vm "github.com/ontio/ontology/vm/neovm"
 	vmtypes "github.com/ontio/ontology/vm/neovm/types"
-	"fmt"
 )
 
 // HeaderGetNextConsensus put current block time to vm stack
@@ -71,7 +71,7 @@ func RuntimeCheckWitness(service *NeoVmService, engine *vm.ExecutionEngine) erro
 func RuntimeSerialize(service *NeoVmService, engine *vm.ExecutionEngine) error {
 	fmt.Println("=========RuntimeSerialize==========")
 	item := vm.PopStackItem(engine)
-	fmt.Printf("%v\n",item)
+	fmt.Printf("%v\n", item)
 	buf, err := SerializeStackItem(item)
 	if err != nil {
 		return err
@@ -118,7 +118,7 @@ func RuntimeLog(service *NeoVmService, engine *vm.ExecutionEngine) error {
 	}
 	fmt.Println("===RuntimeLog===")
 	fmt.Println(item)
-	fmt.Printf("%s\n",item)
+	fmt.Printf("%s\n", item)
 
 	context := service.ContextRef.CurrentContext()
 	txHash := service.Tx.Hash()

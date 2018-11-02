@@ -49,6 +49,7 @@ func InitGlobalParams() {
 }
 
 func RegisterParamContract(native *native.NativeService) {
+	fmt.Println("===RegisterParamContract===")
 	native.Register(INIT_NAME, ParamInit)
 	native.Register(ACCEPT_ADMIN_NAME, AcceptAdmin)
 	native.Register(TRANSFER_ADMIN_NAME, TransferAdmin)
@@ -59,7 +60,10 @@ func RegisterParamContract(native *native.NativeService) {
 }
 
 func ParamInit(native *native.NativeService) ([]byte, error) {
+	fmt.Println("===ParamInit")
 	contract := native.ContextRef.CurrentContext().ContractAddress
+	fmt.Printf("===ParamInit contract is :%v\n", contract[:])
+
 	storageAdmin, _ := GetStorageRole(native, generateAdminKey(contract, false))
 	storageOperator, _ := GetStorageRole(native, generateAdminKey(contract, false))
 	if storageAdmin != common.ADDRESS_EMPTY || storageOperator != common.ADDRESS_EMPTY {
@@ -67,16 +71,22 @@ func ParamInit(native *native.NativeService) ([]byte, error) {
 	}
 
 	initParams := Params{}
+	fmt.Printf("native.input is %v\n", native.Input)
 	args, err := serialization.ReadVarBytes(bytes.NewBuffer(native.Input))
 	if err != nil {
+		fmt.Println("err:" + err.Error())
 		return utils.BYTE_FALSE, errors.NewDetailErr(err, errors.ErrNoCode, "init param, read native input failed!")
 	}
-	argsBuffer := bytes.NewBuffer(args)
+	fmt.Printf("===ParamInit args:%v\n", args)
+
+	//argsBuffer := bytes.NewBuffer(args)
+	argsBuffer := bytes.NewBuffer(native.Input)
 	if err := initParams.Deserialize(argsBuffer); err != nil {
 		return utils.BYTE_FALSE, errors.NewDetailErr(err, errors.ErrNoCode, "init param, deserialize params failed!")
 	}
 	native.CacheDB.Put(generateParamKey(contract, CURRENT_VALUE), getParamStorageItem(initParams).ToArray())
 	native.CacheDB.Put(generateParamKey(contract, PREPARE_VALUE), getParamStorageItem(initParams).ToArray())
+	fmt.Println("===ParamInit 3")
 
 	var admin common.Address
 	if admin, err = utils.ReadAddress(argsBuffer); err != nil {
@@ -85,6 +95,8 @@ func ParamInit(native *native.NativeService) ([]byte, error) {
 	native.CacheDB.Put(generateAdminKey(contract, false), getRoleStorageItem(admin).ToArray())
 	operator := admin
 	native.CacheDB.Put(GenerateOperatorKey(contract), getRoleStorageItem(operator).ToArray())
+	fmt.Println("===ParamInit 4")
+
 	return utils.BYTE_TRUE, nil
 }
 
@@ -151,6 +163,7 @@ func SetOperator(native *native.NativeService) ([]byte, error) {
 }
 
 func SetGlobalParam(native *native.NativeService) ([]byte, error) {
+	fmt.Println("======SetGlobalParam=======")
 	contract := native.ContextRef.CurrentContext().ContractAddress
 	operator, err := GetStorageRole(native, GenerateOperatorKey(contract))
 	if err != nil || operator == common.ADDRESS_EMPTY {
@@ -184,14 +197,18 @@ func SetGlobalParam(native *native.NativeService) ([]byte, error) {
 }
 
 func GetGlobalParam(native *native.NativeService) ([]byte, error) {
-	fmt.Printf("===GetGlobalParam===%v\n",native.Input)
+	fmt.Printf("===GetGlobalParam===%v\n", native.Input)
 	var paramNameList ParamNameList
 	if err := paramNameList.Deserialize(bytes.NewBuffer(native.Input)); err != nil {
 		return utils.BYTE_FALSE, errors.NewErr("get param, deserialize failed!")
 	}
+	fmt.Println("===GetGlobalParam===1")
+
 	if len(paramNameList) == 0 {
 		return utils.BYTE_FALSE, errors.NewErr("get param, required params is nil!")
 	}
+	fmt.Println("===GetGlobalParam===2")
+
 	// read from db
 	contract := native.ContextRef.CurrentContext().ContractAddress
 	storageParams, err := getStorageParam(native, generateParamKey(contract, CURRENT_VALUE))
@@ -199,9 +216,13 @@ func GetGlobalParam(native *native.NativeService) ([]byte, error) {
 		return utils.BYTE_FALSE, errors.NewDetailErr(err, errors.ErrNoCode,
 			"get param, read storage current param error!")
 	}
+	fmt.Println("===GetGlobalParam===3")
+
 	if len(storageParams) == 0 {
 		return utils.BYTE_FALSE, errors.NewErr("get param, there are no params!")
 	}
+	fmt.Println("===GetGlobalParam===4")
+
 	params := new(Params)
 	for _, paramName := range paramNameList { // read param not in cache
 		if index, value := storageParams.GetParam(paramName); index >= 0 {
@@ -210,11 +231,15 @@ func GetGlobalParam(native *native.NativeService) ([]byte, error) {
 			params.SetParam(Param{Key: paramName, Value: ""})
 		}
 	}
+	fmt.Println("===GetGlobalParam===5")
+
 	result := new(bytes.Buffer)
 	err = params.Serialize(result)
 	if err != nil {
 		return utils.BYTE_FALSE, errors.NewDetailErr(err, errors.ErrNoCode, "get param, serialize result error!")
 	}
+	fmt.Printf("===GetGlobalParam===6 result:%v\n",result.Bytes())
+
 	return result.Bytes(), nil
 }
 

@@ -53,7 +53,7 @@ func (this *WasmVmService) putstore(engine *exec.ExecutionEngine) (bool, error) 
 	if err != nil {
 		return false, err
 	}
-	this.CacheDB.Put( k, value)
+	this.CacheDB.Put(k, value)
 
 	vm.RestoreCtx()
 
@@ -121,7 +121,7 @@ func (this *WasmVmService) deletestore(engine *exec.ExecutionEngine) (bool, erro
 		return false, err
 	}
 
-	this.CacheDB.Delete( k)
+	this.CacheDB.Delete(k)
 	vm.RestoreCtx()
 
 	return true, nil

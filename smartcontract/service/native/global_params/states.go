@@ -106,11 +106,13 @@ func (nameList *ParamNameList) Serialize(w io.Writer) error {
 
 func (nameList *ParamNameList) Deserialize(r io.Reader) error {
 	nameNum, err := utils.ReadVarUint(r)
+	fmt.Printf("nameNum is %d\n",nameNum)
 	if err != nil {
 		return errors.NewDetailErr(err, errors.ErrNoCode, "param config, deserialize param name list length error!")
 	}
 	for i := 0; uint64(i) < nameNum; i++ {
 		name, err := serialization.ReadString(r)
+		fmt.Printf("name is %s\n",name)
 		if err != nil {
 			return errors.NewDetailErr(err, errors.ErrNoCode, fmt.Sprintf("param config, deserialize param name %v error!", name))
 		}

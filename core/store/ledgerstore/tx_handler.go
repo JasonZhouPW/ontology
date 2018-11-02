@@ -24,6 +24,7 @@ import (
 	"math"
 	"strconv"
 
+	"encoding/json"
 	"github.com/ontio/ontology/common"
 	"github.com/ontio/ontology/common/config"
 	"github.com/ontio/ontology/common/log"
@@ -33,6 +34,8 @@ import (
 	scommon "github.com/ontio/ontology/core/store/common"
 	"github.com/ontio/ontology/core/store/overlaydb"
 	"github.com/ontio/ontology/core/types"
+	utils2 "github.com/ontio/ontology/core/utils"
+	"github.com/ontio/ontology/errors"
 	"github.com/ontio/ontology/smartcontract"
 	"github.com/ontio/ontology/smartcontract/event"
 	"github.com/ontio/ontology/smartcontract/service/native/global_params"
@@ -40,15 +43,17 @@ import (
 	"github.com/ontio/ontology/smartcontract/service/native/ont"
 	"github.com/ontio/ontology/smartcontract/service/native/utils"
 	"github.com/ontio/ontology/smartcontract/service/neovm"
+	"github.com/ontio/ontology/smartcontract/states"
 	"github.com/ontio/ontology/smartcontract/storage"
 	ntypes "github.com/ontio/ontology/vm/neovm/types"
-	"encoding/json"
-	utils2 "github.com/ontio/ontology/core/utils"
 )
 
 //HandleDeployTransaction deal with smart contract deploy transaction
 func (self *StateStore) HandleDeployTransaction(store store.LedgerStore, overlay *overlaydb.OverlayDB,
 	tx *types.Transaction, block *types.Block, notify *event.ExecuteNotify) error {
+
+		fmt.Println("===HandleDeployTransaction===")
+
 	deploy := tx.Payload.(*payload.DeployCode)
 	var (
 		notifies    []*event.NotifyEventInfo
@@ -101,7 +106,7 @@ func (self *StateStore) HandleDeployTransaction(store store.LedgerStore, overlay
 		}
 		cache.Commit()
 	}
-*/
+	*/
 	address := deploy.Address()
 	log.Infof("deploy contract address:%s", address.ToHexString())
 	// store contract message
@@ -123,27 +128,18 @@ func (self *StateStore) HandleDeployTransaction(store store.LedgerStore, overlay
 //HandleInvokeTransaction deal with smart contract invoke transaction
 func (self *StateStore) HandleInvokeTransaction(store store.LedgerStore, overlay *overlaydb.OverlayDB,
 	tx *types.Transaction, block *types.Block, notify *event.ExecuteNotify) error {
+	fmt.Println("====HandleInvokeTransaction====")
 	invoke := tx.Payload.(*payload.InvokeCode)
 	code := invoke.Code
 	sysTransFlag := bytes.Compare(code, ninit.COMMIT_DPOS_BYTES) == 0 || block.Header.Height == 0
 
 	isCharge := !sysTransFlag && tx.GasPrice != 0
 	txStruct := &utils2.TxStruct{}
-	fmt.Printf("code is  %v\n", code)
 	errs := json.Unmarshal(code, txStruct)
-	if errs != nil{
-		fmt.Println("HandleInvokeTransaction err:"+errs.Error())
+	if errs != nil {
 		return errs
 	}
-	fmt.Printf("txStruct is %v\n",txStruct)
-
-	address := txStruct.Address
-	if isNativeContract(address){
-		fmt.Printf("it's a native contract:%v\n",address)
-
-	}
-
-
+	cache := storage.NewCacheDB(overlay)
 	// init smart contract configuration info
 	config := &smartcontract.Config{
 		Time:       block.Header.Timestamp,
@@ -151,19 +147,78 @@ func (self *StateStore) HandleInvokeTransaction(store store.LedgerStore, overlay
 		Tx:         tx,
 		RandomHash: block.Hash(),
 	}
-
 	var (
-		costGasLimit      uint64
-		costGas           uint64
+		costGasLimit uint64
+		costGas      uint64
 		//oldBalance        uint64
 		newBalance        uint64
 		codeLenGasLimit   uint64
 		availableGasLimit uint64
 		//minGas            uint64
-		err               error
+		err error
 	)
-	cache := storage.NewCacheDB(overlay)
+	//cache := storage.NewCacheDB(overlay)
 	availableGasLimit = tx.GasLimit
+
+	sc := smartcontract.SmartContract{
+		Config:  config,
+		CacheDB: cache,
+		Store:   store,
+		Gas:     availableGasLimit - codeLenGasLimit,
+	}
+
+	address := txStruct.Address
+	if IsNativeContract(address) {
+		// startup a native service
+
+		parsedAddr, err := common.AddressParseFromBytes(txStruct.Address)
+		if err != nil {
+			return errors.NewErr("parse address error")
+		}
+		contract := states.ContractInvokeParam{
+			Version: byte(txStruct.Version),
+			Address: parsedAddr,
+			Method:  string(txStruct.Method),
+			Args:    txStruct.Args,
+		}
+		//native := &native.NativeService{
+		//	CacheDB:     cache,
+		//	InvokeParam: contract,
+		//	Tx:          tx,
+		//	Height:      block.Header.Height,
+		//	Time:        block.Header.Timestamp,
+		//	ContextRef:  &sc,
+		//	ServiceMap:  make(map[string]native.Handler),
+		//}
+		native,err := sc.NewNativeService()
+		native.InvokeParam = contract
+		if err != nil{
+			return err
+		}
+		_, err = native.Invoke()
+		if err != nil {
+			return err
+		}
+		notify.Notify = append(notify.Notify, native.Notifications...)
+		notify.State = event.CONTRACT_STATE_SUCCESS
+		cache.Commit()
+
+		return nil
+
+	}
+
+	//var (
+	//	costGasLimit      uint64
+	//	costGas           uint64
+	//	//oldBalance        uint64
+	//	newBalance        uint64
+	//	codeLenGasLimit   uint64
+	//	availableGasLimit uint64
+	//	//minGas            uint64
+	//	err               error
+	//)
+	////cache := storage.NewCacheDB(overlay)
+	//availableGasLimit = tx.GasLimit
 	//todo replace with wasm vm
 
 	/*if isCharge {
@@ -208,14 +263,14 @@ func (self *StateStore) HandleInvokeTransaction(store store.LedgerStore, overlay
 			availableGasLimit = maxAvaGasLimit
 		}
 	}
-*/
+	*/
 	//init smart contract info
-	sc := smartcontract.SmartContract{
-		Config:  config,
-		CacheDB: cache,
-		Store:   store,
-		Gas:     availableGasLimit - codeLenGasLimit,
-	}
+	//sc := smartcontract.SmartContract{
+	//	Config:  config,
+	//	CacheDB: cache,
+	//	Store:   store,
+	//	Gas:     availableGasLimit - codeLenGasLimit,
+	//}
 
 	//start the smart contract executive function
 	engine, _ := sc.NewExecuteEngine(invoke.Code)
@@ -315,6 +370,8 @@ func chargeCostGas(payer common.Address, gas uint64, config *smartcontract.Confi
 }
 
 func refreshGlobalParam(config *smartcontract.Config, cache *storage.CacheDB, store store.LedgerStore) error {
+	fmt.Println("===refreshGlobalParam===")
+
 	bf := new(bytes.Buffer)
 	if err := utils.WriteVarUint(bf, uint64(len(neovm.GAS_TABLE_KEYS))); err != nil {
 		return fmt.Errorf("write gas_table_keys length error:%s", err)
@@ -394,16 +451,15 @@ func calcGasByCodeLen(codeLen int, codeGas uint64) uint64 {
 	return uint64(codeLen/neovm.PER_UNIT_CODE_LEN) * codeGas
 }
 
-
-func isNativeContract(address []byte) bool{
+func IsNativeContract(address []byte) bool {
 
 	if bytes.Equal(address, utils.AuthContractAddress[:]) ||
 		bytes.Equal(address, utils.GovernanceContractAddress[:]) ||
-		bytes.Equal(address,utils.OngContractAddress[:])||
-		bytes.Equal(address,utils.OntContractAddress[:])||
-		bytes.Equal(address,utils.OntIDContractAddress[:])||
-		bytes.Equal(address,utils.ParamContractAddress[:]){
-			return true
+		bytes.Equal(address, utils.OngContractAddress[:]) ||
+		bytes.Equal(address, utils.OntContractAddress[:]) ||
+		bytes.Equal(address, utils.OntIDContractAddress[:]) ||
+		bytes.Equal(address, utils.ParamContractAddress[:]) {
+		return true
 	}
 	return false
 

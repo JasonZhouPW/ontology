@@ -62,7 +62,6 @@ var GenesisBookkeepers []keypair.PublicKey
 // BuildGenesisBlock returns the genesis block with default consensus bookkeeper list
 func BuildGenesisBlock(defaultBookkeeper []keypair.PublicKey, genesisConfig *config.GenesisConfig) (*types.Block, error) {
 	//getBookkeeper
-	fmt.Println("===BuildGenesisBlock===")
 	GenesisBookkeepers = defaultBookkeeper
 	nextBookkeeper, err := types.AddressFromBookkeepers(defaultBookkeeper)
 	if err != nil {
@@ -208,7 +207,7 @@ func newGoverningInit() *types.Transaction {
 	}
 
 	//mutable := utils.BuildNativeTransaction(nutils.OntContractAddress, ont.INIT_NAME, args.Bytes())
-	mutable := utils.BuildWasmNativeTransaction(nutils.OntContractAddress, ont.INIT_NAME, args.Bytes())
+	mutable := utils.BuildWasmNativeTransaction(nutils.OntContractAddress, 0, ont.INIT_NAME, args.Bytes())
 	tx, err := mutable.IntoImmutable()
 	if err != nil {
 		panic("constract genesis governing token transaction error ")
@@ -217,7 +216,8 @@ func newGoverningInit() *types.Transaction {
 }
 
 func newUtilityInit() *types.Transaction {
-	mutable := utils.BuildNativeTransaction(nutils.OngContractAddress, ont.INIT_NAME, []byte{})
+	//mutable := utils.BuildNativeTransaction(nutils.OngContractAddress, ont.INIT_NAME, []byte{})
+	mutable := utils.BuildWasmNativeTransaction(nutils.OngContractAddress, 0, ont.INIT_NAME, []byte{})
 	tx, err := mutable.IntoImmutable()
 	if err != nil {
 		panic("constract genesis governing token transaction error ")
@@ -259,7 +259,7 @@ func newParamInit() *types.Transaction {
 	}
 	nutils.WriteAddress(bf, addr)
 
-	mutable := utils.BuildNativeTransaction(nutils.ParamContractAddress, global_params.INIT_NAME, bf.Bytes())
+	mutable := utils.BuildWasmNativeTransaction(nutils.ParamContractAddress, 0, global_params.INIT_NAME, bf.Bytes())
 	tx, err := mutable.IntoImmutable()
 	if err != nil {
 		panic("constract genesis governing token transaction error ")
@@ -268,7 +268,7 @@ func newParamInit() *types.Transaction {
 }
 
 func newGoverConfigInit(config []byte) *types.Transaction {
-	mutable := utils.BuildNativeTransaction(nutils.GovernanceContractAddress, governance.INIT_CONFIG, config)
+	mutable := utils.BuildWasmNativeTransaction(nutils.GovernanceContractAddress, 0, governance.INIT_CONFIG, config)
 	tx, err := mutable.IntoImmutable()
 	if err != nil {
 		panic("constract genesis governing token transaction error ")

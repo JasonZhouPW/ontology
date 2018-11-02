@@ -20,36 +20,37 @@ package wasmvm
 import (
 	"bytes"
 	"encoding/binary"
-	"fmt"
 	"encoding/hex"
+	"fmt"
 
+	"github.com/ontio/ontology/common"
+	"github.com/ontio/ontology/common/log"
 	"github.com/ontio/ontology/core/store"
 	"github.com/ontio/ontology/core/types"
+	"github.com/ontio/ontology/errors"
 	"github.com/ontio/ontology/smartcontract/context"
 	"github.com/ontio/ontology/smartcontract/event"
-	"github.com/ontio/ontology/smartcontract/storage"
-	"github.com/ontio/ontology/common"
-	"github.com/ontio/ontology/vm/wasmvm/util"
-	"github.com/ontio/ontology/smartcontract/states"
-	"github.com/ontio/ontology/errors"
-	"github.com/ontio/ontology/vm/wasmvm/exec"
-	"github.com/ontio/ontology/smartcontract/service/native/ont"
-	"github.com/ontio/ontology/common/log"
 	"github.com/ontio/ontology/smartcontract/service/native"
+	"github.com/ontio/ontology/smartcontract/service/native/ont"
+	"github.com/ontio/ontology/smartcontract/states"
+	"github.com/ontio/ontology/smartcontract/storage"
+	"github.com/ontio/ontology/vm/wasmvm/exec"
+	"github.com/ontio/ontology/vm/wasmvm/util"
 )
 
 type WasmVmService struct {
-	Store         store.LedgerStore
-	CacheDB       *storage.CacheDB
+	Store   store.LedgerStore
+	CacheDB *storage.CacheDB
 	//CloneCache    *storage.CloneCache
 	ContextRef    context.ContextRef
 	Notifications []*event.NotifyEventInfo
 	Code          []byte
 	Tx            *types.Transaction
 	Time          uint32
-	Height		  uint32
+	Height        uint32
 	RandomHash    common.Uint256
 }
+
 var (
 	ERR_CHECK_STACK_SIZE  = errors.NewErr("[WasmVmService] vm over max stack size!")
 	ERR_EXECUTE_CODE      = errors.NewErr("[WasmVmService] vm execute code invalid!")
@@ -59,7 +60,6 @@ var (
 	DEPLOYCODE_TYPE_ERROR = errors.NewErr("[WasmVmService] DeployCode type error!")
 	VM_EXEC_FAULT         = errors.NewErr("[WasmVmService] vm execute state fault!")
 )
-
 
 func (this *WasmVmService) Invoke() (interface{}, error) {
 
@@ -162,6 +162,7 @@ func (this *WasmVmService) Invoke() (interface{}, error) {
 	this.ContextRef.PushNotifications(this.Notifications)
 	return result, nil
 }
+
 //
 //func (this *WasmVmService) marshalNeoParams(engine *exec.ExecutionEngine) (bool, error) {
 //	vm := engine.GetVM()
@@ -314,7 +315,7 @@ func (this *WasmVmService) getContract(bs []byte) ([]byte, error) {
 	//	return nil, DEPLOYCODE_TYPE_ERROR
 	//}
 	//return contract.Code, nil
-	address ,err := common.AddressParseFromBytes(bs)
+	address, err := common.AddressParseFromBytes(bs)
 	dep, err := this.CacheDB.GetContract(address)
 	if err != nil {
 		return nil, errors.NewErr("[getContract] Get contract context error!")
@@ -327,11 +328,11 @@ func (this *WasmVmService) getContract(bs []byte) ([]byte, error) {
 }
 
 //native invoke
-func (this *WasmVmService) nativeInvoke(engine *exec.ExecutionEngine) (bool, error){
+func (this *WasmVmService) nativeInvoke(engine *exec.ExecutionEngine) (bool, error) {
 	vm := engine.GetVM()
 	envCall := vm.GetEnvCall()
 	params := envCall.GetParams()
-	if len(params) != 4{
+	if len(params) != 4 {
 		return false, errors.NewErr("[nativeInvoke]parameter count error while call readMessage")
 	}
 	//get version
@@ -344,7 +345,7 @@ func (this *WasmVmService) nativeInvoke(engine *exec.ExecutionEngine) (bool, err
 		return false, errors.NewErr("[nativeInvoke]get Contract address failed:" + err.Error())
 	}
 
-	if len(addr) == 0{
+	if len(addr) == 0 {
 		return false, errors.NewErr("[nativeInvoke]No native contract address found!")
 	}
 	addrbytes, err := common.HexToBytes(util.TrimBuffToString(addr))
@@ -354,7 +355,7 @@ func (this *WasmVmService) nativeInvoke(engine *exec.ExecutionEngine) (bool, err
 	//get method
 	methodIdx := params[2]
 	method, err := vm.GetPointerMemory(methodIdx)
-	if err != nil{
+	if err != nil {
 		return false, errors.NewErr("[nativeInvoke]get method failed!")
 	}
 	methodName := util.TrimBuffToString(method)
@@ -381,7 +382,6 @@ func (this *WasmVmService) nativeInvoke(engine *exec.ExecutionEngine) (bool, err
 		Time:        this.Time,
 		ContextRef:  this.ContextRef,
 		ServiceMap:  make(map[string]native.Handler),
-
 	}
 
 	result, err := native.Invoke()
@@ -409,7 +409,6 @@ func (this *WasmVmService) nativeInvoke(engine *exec.ExecutionEngine) (bool, err
 	return true, nil
 
 }
-
 
 // callContract
 // need 4 parameters
@@ -484,7 +483,7 @@ func (this *WasmVmService) callContract(engine *exec.ExecutionEngine) (bool, err
 	contract := states.ContractInvokeParam{
 		Version: 1, //fix to > 0
 		Address: contractAddress,
-		Method: string(methodName),
+		Method:  string(methodName),
 		Args:    args,
 	}
 
@@ -493,7 +492,7 @@ func (this *WasmVmService) callContract(engine *exec.ExecutionEngine) (bool, err
 	}
 
 	this.Code = bf.Bytes()
-	result , err := this.Invoke()
+	result, err := this.Invoke()
 	if err != nil {
 		return false, errors.NewErr("[callContract]AppCall failed:" + err.Error())
 	}
@@ -551,7 +550,7 @@ func GetContractAddress(code string) (common.Address, error) {
 		return common.Address{}, err
 	}
 
-	return common.AddressFromVmCode(data),nil
+	return common.AddressFromVmCode(data), nil
 }
 
 //will not call NEO contract
