@@ -334,7 +334,6 @@ func (vm *VM) pushFloat32(f float32) {
 // the VM's module.
 //insideCall :true (call contract)
 func (vm *VM) ExecCode(insideCall bool, fnIndex int64, args ...uint64) (interface{}, error) {
-
 	if int(fnIndex) > len(vm.compiledFuncs) {
 		return nil, InvalidFunctionIndexError(fnIndex)
 	}

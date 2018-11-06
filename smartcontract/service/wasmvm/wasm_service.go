@@ -120,18 +120,14 @@ func (this *WasmVmService) Invoke() (interface{}, error) {
 	stateMachine.Register("ONT_Transaction_GetType", this.transactionGetType)
 	stateMachine.Register("ONT_Transaction_GetAttributes", this.transactionGetAttributes)
 
-	fmt.Println("==============wasm contract invoke ============")
-
 	engine := exec.NewExecutionEngine(
 		new(util.ECDsaCrypto),
 		stateMachine,
 	)
-	fmt.Println("==============wasm contract invoke ============ 1")
 
 	contract := &states.ContractInvokeParam{}
 	contract.Deserialize(bytes.NewBuffer(this.Code))
 	//addr := contract.Address
-	fmt.Println("==============wasm contract invoke ============ 2")
 	fmt.Printf("contract address is %s\n", contract.Address.ToBase58())
 
 	code, err := this.Store.GetContractState(contract.Address)
@@ -150,7 +146,6 @@ func (this *WasmVmService) Invoke() (interface{}, error) {
 	//	}
 	//	contract.Code = dpcode
 	//}
-	fmt.Println("==============wasm contract invoke ============ 3")
 
 	var caller common.Address
 	if this.ContextRef.CallingContext() == nil {
@@ -166,7 +161,6 @@ func (this *WasmVmService) Invoke() (interface{}, error) {
 
 
 	res, err := engine.Call(caller, code.Code, contract.Method, contract.Args, contract.Version)
-	fmt.Println("==============wasm contract invoke ============ 4")
 
 	if err != nil {
 		fmt.Printf("wasm call error:%s\n",err)
@@ -181,7 +175,6 @@ func (this *WasmVmService) Invoke() (interface{}, error) {
 
 		return nil, err
 	}
-	fmt.Println("==============wasm contract invoke ============ 5")
 
 	this.ContextRef.PopContext()
 	this.ContextRef.PushNotifications(this.Notifications)

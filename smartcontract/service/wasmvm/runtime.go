@@ -24,6 +24,7 @@ import (
 	"github.com/ontio/ontology/smartcontract/event"
 	"github.com/ontio/ontology/vm/wasmvm/exec"
 	"github.com/ontio/ontology/vm/wasmvm/util"
+	"encoding/binary"
 )
 
 func (this *WasmVmService) runtimeGetTime(engine *exec.ExecutionEngine) (bool, error) {
@@ -89,16 +90,35 @@ func (this *WasmVmService) runtimeNotify(engine *exec.ExecutionEngine) (bool, er
 	vm := engine.GetVM()
 	envCall := vm.GetEnvCall()
 	params := envCall.GetParams()
+
 	if len(params) != 1 {
+
 		return false, errors.NewErr("[RuntimeNotify]parameter count error ")
 	}
 	item, err := vm.GetPointerMemory(params[0])
 	if err != nil {
 		return false, err
 	}
+
+	length :=  len(item) / 4
+
+	notify := make([]string, length)
+
+	for i := 0 ;i< length;i++ {
+
+		tmp:= item[i*4:(i+1)*4]
+		idx := binary.LittleEndian.Uint32(tmp)
+
+		tmpitem, err := vm.GetPointerMemory(uint64(idx))
+		if err != nil {
+			return false, err
+		}
+		notify[i] = string(tmpitem)
+	}
+
 	context := this.ContextRef.CurrentContext()
 
-	this.Notifications = append(this.Notifications, &event.NotifyEventInfo{ContractAddress: context.ContractAddress, States: []string{string(item)}})
+	this.Notifications = append(this.Notifications, &event.NotifyEventInfo{ContractAddress: context.ContractAddress, States: notify})
 	vm.RestoreCtx()
 	return true, nil
 }

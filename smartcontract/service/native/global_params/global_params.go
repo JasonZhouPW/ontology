@@ -197,17 +197,14 @@ func SetGlobalParam(native *native.NativeService) ([]byte, error) {
 }
 
 func GetGlobalParam(native *native.NativeService) ([]byte, error) {
-	fmt.Printf("===GetGlobalParam===%v\n", native.Input)
 	var paramNameList ParamNameList
 	if err := paramNameList.Deserialize(bytes.NewBuffer(native.Input)); err != nil {
 		return utils.BYTE_FALSE, errors.NewErr("get param, deserialize failed!")
 	}
-	fmt.Println("===GetGlobalParam===1")
 
 	if len(paramNameList) == 0 {
 		return utils.BYTE_FALSE, errors.NewErr("get param, required params is nil!")
 	}
-	fmt.Println("===GetGlobalParam===2")
 
 	// read from db
 	contract := native.ContextRef.CurrentContext().ContractAddress
@@ -216,12 +213,10 @@ func GetGlobalParam(native *native.NativeService) ([]byte, error) {
 		return utils.BYTE_FALSE, errors.NewDetailErr(err, errors.ErrNoCode,
 			"get param, read storage current param error!")
 	}
-	fmt.Println("===GetGlobalParam===3")
 
 	if len(storageParams) == 0 {
 		return utils.BYTE_FALSE, errors.NewErr("get param, there are no params!")
 	}
-	fmt.Println("===GetGlobalParam===4")
 
 	params := new(Params)
 	for _, paramName := range paramNameList { // read param not in cache
@@ -231,14 +226,12 @@ func GetGlobalParam(native *native.NativeService) ([]byte, error) {
 			params.SetParam(Param{Key: paramName, Value: ""})
 		}
 	}
-	fmt.Println("===GetGlobalParam===5")
 
 	result := new(bytes.Buffer)
 	err = params.Serialize(result)
 	if err != nil {
 		return utils.BYTE_FALSE, errors.NewDetailErr(err, errors.ErrNoCode, "get param, serialize result error!")
 	}
-	fmt.Printf("===GetGlobalParam===6 result:%v\n",result.Bytes())
 
 	return result.Bytes(), nil
 }

@@ -359,6 +359,7 @@ func (e *ExecutionEngine) call(caller common.Address,
 	input []byte,
 	actionName string,
 	ver byte) (returnbytes []byte, er error) {
+
 	if ver > 0 { //production contract version
 		methodName := CONTRACT_METHOD_NAME //fix to "invoke"
 		//1. read code
