@@ -488,7 +488,7 @@ func NewSmartContractTransaction(gasPrice, gasLimit uint64, invokeCode []byte) (
 
 //add for wasm vm native transaction call
 func BuildNativeInvokeCode(contractAddress common.Address, version byte, method string, params []interface{}) ([]byte, error) {
-	fmt.Printf("===BuildNativeInvokeCode  addr:%s, method is %s, params is %v\n",contractAddress.ToHexString(), method, params)
+	fmt.Printf("===BuildNativeInvokeCode  addr:%s, method is %s, params is %v\n", contractAddress.ToHexString(), method, params)
 	bf := bytes.NewBuffer(nil)
 
 	for _, p := range params {
@@ -506,7 +506,7 @@ func BuildNativeInvokeCode(contractAddress common.Address, version byte, method 
 			}
 		case []string:
 			utils.WriteVarUint(bf, uint64(len(p.([]string))))
-			for _, s:= range p.([]string){
+			for _, s := range p.([]string) {
 				serialization.WriteVarBytes(bf, []byte(s))
 			}
 		case string:
@@ -515,7 +515,7 @@ func BuildNativeInvokeCode(contractAddress common.Address, version byte, method 
 			serialization.WriteVarBytes(bf, p.([]byte))
 		case []interface{}:
 			utils.WriteVarUint(bf, uint64(len(p.([]interface{}))))
-			for _, s:= range p.([]interface{}){
+			for _, s := range p.([]interface{}) {
 				serialization.WriteVarBytes(bf, []byte(s.(string)))
 			}
 

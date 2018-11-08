@@ -30,6 +30,7 @@ import (
 )
 
 var service = NewInteropService()
+
 //
 //func TestTest1(t *testing.T){
 //	engine := NewExecutionEngine(nil, nil)
@@ -57,7 +58,6 @@ var service = NewInteropService()
 //	}
 //	fmt.Println(res)
 //}
-
 
 func TestAdd(t *testing.T) {
 	engine := NewExecutionEngine(nil, nil)
@@ -168,7 +168,7 @@ func TestBlockHeight(t *testing.T) {
 		return true, nil
 	})
 
-	engine := NewExecutionEngine(nil,  service)
+	engine := NewExecutionEngine(nil, service)
 
 	code, err := ioutil.ReadFile("./test_data2/testBlockHeight.wasm")
 	if err != nil {
@@ -208,7 +208,7 @@ func TestMem(t *testing.T) {
 
 	})
 
-	engine := NewExecutionEngine(nil,  service)
+	engine := NewExecutionEngine(nil, service)
 	//test
 	code, err := ioutil.ReadFile("./test_data2/TestMemory.wasm")
 	if err != nil {
@@ -234,7 +234,7 @@ func TestMem(t *testing.T) {
 }
 
 func TestGlobal(t *testing.T) {
-	engine := NewExecutionEngine(nil,  nil)
+	engine := NewExecutionEngine(nil, nil)
 	//test
 	code, err := ioutil.ReadFile("./test_data2/str.wasm")
 	if err != nil {
@@ -258,7 +258,7 @@ func TestGlobal(t *testing.T) {
 }
 
 func TestIf(t *testing.T) {
-	engine := NewExecutionEngine(nil,  nil)
+	engine := NewExecutionEngine(nil, nil)
 	//test
 	code, err := ioutil.ReadFile("./test_data2/ifTest.wasm")
 	if err != nil {
@@ -296,7 +296,7 @@ func TestIf(t *testing.T) {
 }
 
 func TestLoop(t *testing.T) {
-	engine := NewExecutionEngine(nil,  nil)
+	engine := NewExecutionEngine(nil, nil)
 	//test
 	code, err := ioutil.ReadFile("./test_data2/ifTest.wasm")
 	if err != nil {
@@ -327,7 +327,7 @@ func TestLoop(t *testing.T) {
 }
 
 func TestWhileLoop(t *testing.T) {
-	engine := NewExecutionEngine(nil,  nil)
+	engine := NewExecutionEngine(nil, nil)
 	//test
 	code, err := ioutil.ReadFile("./test_data2/ifTest.wasm")
 	if err != nil {
@@ -368,7 +368,7 @@ func TestIfII(t *testing.T) {
 	fmt.Println(b)
 
 	fmt.Println(u)
-	engine := NewExecutionEngine(nil,  nil)
+	engine := NewExecutionEngine(nil, nil)
 	//test
 	code, err := ioutil.ReadFile("./test_data2/ifTest.wasm")
 	if err != nil {
@@ -428,7 +428,7 @@ func TestStrings(t *testing.T) {
 }
 
 func TestIntArraySum(t *testing.T) {
-	engine := NewExecutionEngine(nil,  nil)
+	engine := NewExecutionEngine(nil, nil)
 	//test
 	code, err := ioutil.ReadFile("./test_data2/intarray.wasm")
 	if err != nil {
@@ -458,7 +458,7 @@ func TestIntArraySum(t *testing.T) {
 }
 
 func TestSimplestruct(t *testing.T) {
-	engine := NewExecutionEngine(nil,  nil)
+	engine := NewExecutionEngine(nil, nil)
 	//test
 	code, err := ioutil.ReadFile("./test_data2/simplestruct.wasm")
 	if err != nil {
@@ -493,7 +493,7 @@ func TestSimplestruct(t *testing.T) {
 }
 
 func TestSimplestruct2(t *testing.T) {
-	engine := NewExecutionEngine(nil,  nil)
+	engine := NewExecutionEngine(nil, nil)
 	//test
 	code, err := ioutil.ReadFile("./test_data2/simplestruct.wasm")
 	if err != nil {
@@ -533,7 +533,7 @@ func TestSimplestruct2(t *testing.T) {
 }
 
 func TestFloatSum(t *testing.T) {
-	engine := NewExecutionEngine(nil,  nil)
+	engine := NewExecutionEngine(nil, nil)
 	//test
 	code, err := ioutil.ReadFile("./test_data2/float.wasm")
 	if err != nil {
@@ -590,7 +590,7 @@ func TestDoubleSum(t *testing.T) {
 }
 
 func TestCalloc(t *testing.T) {
-	engine := NewExecutionEngine(nil,  nil)
+	engine := NewExecutionEngine(nil, nil)
 	//test
 	code, err := ioutil.ReadFile("./test_data2/calloc.wasm")
 	if err != nil {
@@ -617,7 +617,7 @@ func TestCalloc(t *testing.T) {
 }
 
 func TestMalloc(t *testing.T) {
-	engine := NewExecutionEngine(nil,  nil)
+	engine := NewExecutionEngine(nil, nil)
 	//test
 	code, err := ioutil.ReadFile("./test_data2/malloc.wasm")
 	if err != nil {
@@ -648,7 +648,7 @@ func TestMalloc(t *testing.T) {
 
 //use 'arrayLen' instead of  'sizeof'
 func TestArraylen(t *testing.T) {
-	engine := NewExecutionEngine(nil,  nil)
+	engine := NewExecutionEngine(nil, nil)
 	//test
 	code, err := ioutil.ReadFile("./test_data2/arraylen.wasm")
 	if err != nil {
@@ -735,7 +735,7 @@ func TestContract(t *testing.T) {
 }
 
 func TestString(t *testing.T) {
-	engine := NewExecutionEngine(nil,  nil)
+	engine := NewExecutionEngine(nil, nil)
 	//test
 	code, err := ioutil.ReadFile("./test_data2/stringtest.wasm")
 	if err != nil {
@@ -767,7 +767,7 @@ func TestString(t *testing.T) {
 }
 
 func TestStructParams(t *testing.T) {
-	engine := NewExecutionEngine(nil,  nil)
+	engine := NewExecutionEngine(nil, nil)
 	//test
 	code, err := ioutil.ReadFile("./test_data2/structparams.wasm")
 	if err != nil {

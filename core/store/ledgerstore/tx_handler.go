@@ -52,7 +52,7 @@ import (
 func (self *StateStore) HandleDeployTransaction(store store.LedgerStore, overlay *overlaydb.OverlayDB,
 	tx *types.Transaction, block *types.Block, notify *event.ExecuteNotify) error {
 
-		fmt.Println("===HandleDeployTransaction===")
+	fmt.Println("===HandleDeployTransaction===")
 
 	deploy := tx.Payload.(*payload.DeployCode)
 	var (
@@ -190,9 +190,9 @@ func (self *StateStore) HandleInvokeTransaction(store store.LedgerStore, overlay
 		//	ContextRef:  &sc,
 		//	ServiceMap:  make(map[string]native.Handler),
 		//}
-		native,err := sc.NewNativeService()
+		native, err := sc.NewNativeService()
 		native.InvokeParam = contract
-		if err != nil{
+		if err != nil {
 			return err
 		}
 		_, err = native.Invoke()
@@ -271,8 +271,6 @@ func (self *StateStore) HandleInvokeTransaction(store store.LedgerStore, overlay
 	//	Store:   store,
 	//	Gas:     availableGasLimit - codeLenGasLimit,
 	//}
-
-
 
 	//start the smart contract executive function
 	engine, _ := sc.NewExecuteEngine(txStruct.Args)

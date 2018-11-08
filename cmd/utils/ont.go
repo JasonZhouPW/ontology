@@ -239,7 +239,7 @@ func TransferTx(gasPrice, gasLimit uint64, asset, from, to string, amount uint64
 		return nil, fmt.Errorf("unsupport asset:%s", asset)
 	}
 	invokeCode, err := httpcom.BuildNativeInvokeCode(contractAddr, version, CONTRACT_TRANSFER, []interface{}{sts})
-	fmt.Printf("===TransferTx invokeCode is %v\n",invokeCode)
+	fmt.Printf("===TransferTx invokeCode is %v\n", invokeCode)
 	if err != nil {
 		return nil, fmt.Errorf("build invoke code error:%s", err)
 	}

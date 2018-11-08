@@ -18,13 +18,13 @@
 package wasmvm
 
 import (
+	"encoding/binary"
 	"github.com/ontio/ontology/common"
 	"github.com/ontio/ontology/core/signature"
 	"github.com/ontio/ontology/errors"
 	"github.com/ontio/ontology/smartcontract/event"
 	"github.com/ontio/ontology/vm/wasmvm/exec"
 	"github.com/ontio/ontology/vm/wasmvm/util"
-	"encoding/binary"
 )
 
 func (this *WasmVmService) runtimeGetTime(engine *exec.ExecutionEngine) (bool, error) {
@@ -100,13 +100,13 @@ func (this *WasmVmService) runtimeNotify(engine *exec.ExecutionEngine) (bool, er
 		return false, err
 	}
 
-	length :=  len(item) / 4
+	length := len(item) / 4
 
 	notify := make([]string, length)
 
-	for i := 0 ;i< length;i++ {
+	for i := 0; i < length; i++ {
 
-		tmp:= item[i*4:(i+1)*4]
+		tmp := item[i*4 : (i+1)*4]
 		idx := binary.LittleEndian.Uint32(tmp)
 
 		tmpitem, err := vm.GetPointerMemory(uint64(idx))
@@ -149,4 +149,21 @@ func (this *WasmVmService) runtimeCheckWitness(engine *exec.ExecutionEngine) (bo
 		vm.PushResult(uint64(res))
 	}
 	return true, nil
+}
+
+// raise an exception to terminate the vm execution
+func (this *WasmVmService) runtimeRaiseException(engine *exec.ExecutionEngine) (bool, error) {
+	vm := engine.GetVM()
+
+	envCall := vm.GetEnvCall()
+	params := envCall.GetParams()
+	if len(params) != 1 {
+		return false, errors.NewErr("[runtimeRaiseException]get parameter count error!")
+	}
+	data, err := vm.GetPointerMemory(params[0])
+	if err != nil {
+		return false, errors.NewErr("[runtimeRaiseException]" + err.Error())
+	}
+
+	return false, errors.NewErr(string(data))
 }
