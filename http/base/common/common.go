@@ -23,7 +23,6 @@ import (
 	"bytes"
 	"encoding/hex"
 	"encoding/json"
-	"fmt"
 	"github.com/ontio/ontology-crypto/keypair"
 	"github.com/ontio/ontology/common"
 	"github.com/ontio/ontology/common/constants"
@@ -43,6 +42,8 @@ import (
 	"reflect"
 	"strings"
 	"time"
+
+	"fmt"
 )
 
 const MAX_SEARCH_HEIGHT uint32 = 100
@@ -263,7 +264,6 @@ func GetBlockInfo(block *types.Block) BlockInfo {
 }
 
 func GetBalance(address common.Address) (*BalanceOfRsp, error) {
-	fmt.Println("===bcommon GetBalance")
 	ont, err := GetContractBalance(0, utils.OntContractAddress, address)
 	if err != nil {
 		return nil, fmt.Errorf("get ont balance error:%s", err)
@@ -314,22 +314,18 @@ func GetAllowance(asset string, from, to common.Address) (string, error) {
 }
 
 func GetContractBalance(cVersion byte, contractAddr, accAddr common.Address) (uint64, error) {
-	fmt.Println("==GetContractBalance=")
 
 	mutable, err := NewNativeInvokeTransaction(0, 0, contractAddr, cVersion, "balanceOf", []interface{}{accAddr})
 	if err != nil {
 		return 0, fmt.Errorf("NewNativeInvokeTransaction error:%s", err)
 	}
-	fmt.Println("==GetContractBalance= 1")
 
 	tx, err := mutable.IntoImmutable()
 	if err != nil {
 		return 0, err
 	}
-	fmt.Println("==GetContractBalance= 2")
 
 	result, err := bactor.PreExecuteContract(tx)
-	fmt.Printf("==GetContractBalance result is %v\n", result.Result)
 
 	if err != nil {
 		return 0, fmt.Errorf("PrepareInvokeContract error:%s", err)
@@ -488,7 +484,6 @@ func NewSmartContractTransaction(gasPrice, gasLimit uint64, invokeCode []byte) (
 
 //add for wasm vm native transaction call
 func BuildNativeInvokeCode(contractAddress common.Address, version byte, method string, params []interface{}) ([]byte, error) {
-	fmt.Printf("===BuildNativeInvokeCode  addr:%s, method is %s, params is %v\n", contractAddress.ToHexString(), method, params)
 	bf := bytes.NewBuffer(nil)
 
 	for _, p := range params {
@@ -504,6 +499,13 @@ func BuildNativeInvokeCode(contractAddress common.Address, version byte, method 
 				utils.WriteAddress(bf, s.To)
 				utils.WriteVarUint(bf, s.Value)
 			}
+		case *ont.TransferFrom:
+			tmp := p.(*ont.TransferFrom)
+			utils.WriteAddress(bf, tmp.Sender)
+			utils.WriteAddress(bf, tmp.From)
+			utils.WriteAddress(bf, tmp.To)
+			utils.WriteVarUint(bf, tmp.Value)
+
 		case []string:
 			utils.WriteVarUint(bf, uint64(len(p.([]string))))
 			for _, s := range p.([]string) {
@@ -520,7 +522,7 @@ func BuildNativeInvokeCode(contractAddress common.Address, version byte, method 
 			}
 
 		default:
-			fmt.Printf("===BuildNativeInvokeCode unrecongnized params:%v\n", p)
+			log.Errorf("[BuildNativeInvokeCode] unrecongnized params:%v\n", p)
 		}
 	}
 
@@ -536,7 +538,6 @@ func BuildNativeInvokeCode(contractAddress common.Address, version byte, method 
 	if err != nil {
 		return nil, err
 	}
-	fmt.Printf("===BuildNativeInvokeCode bs is %v\n", bs)
 
 	return bs, nil
 

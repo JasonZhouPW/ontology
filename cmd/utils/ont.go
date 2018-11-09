@@ -116,7 +116,6 @@ func GetAllowance(asset, from, to string) (string, error) {
 
 //Transfer ont|ong from account to another account
 func Transfer(gasPrice, gasLimit uint64, signer *account.Account, asset, from, to string, amount uint64) (string, error) {
-	fmt.Println("===Transfer")
 	mutable, err := TransferTx(gasPrice, gasLimit, asset, signer.Address.ToBase58(), to, amount)
 	if err != nil {
 		return "", err
@@ -239,7 +238,6 @@ func TransferTx(gasPrice, gasLimit uint64, asset, from, to string, amount uint64
 		return nil, fmt.Errorf("unsupport asset:%s", asset)
 	}
 	invokeCode, err := httpcom.BuildNativeInvokeCode(contractAddr, version, CONTRACT_TRANSFER, []interface{}{sts})
-	fmt.Printf("===TransferTx invokeCode is %v\n", invokeCode)
 	if err != nil {
 		return nil, fmt.Errorf("build invoke code error:%s", err)
 	}

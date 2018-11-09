@@ -20,14 +20,15 @@ package cmd
 
 import (
 	"fmt"
+	"strconv"
+	"strings"
+
 	"github.com/ontio/ontology/account"
 	cmdcom "github.com/ontio/ontology/cmd/common"
 	"github.com/ontio/ontology/cmd/utils"
 	"github.com/ontio/ontology/common/config"
 	nutils "github.com/ontio/ontology/smartcontract/service/native/utils"
 	"github.com/urfave/cli"
-	"strconv"
-	"strings"
 )
 
 var AssetCommand = cli.Command{
@@ -223,27 +224,23 @@ func transfer(ctx *cli.Context) error {
 }
 
 func getBalance(ctx *cli.Context) error {
-	fmt.Println("===CMD getBalance ===")
 	SetRpcPort(ctx)
 	if ctx.NArg() < 1 {
 		PrintErrorMsg("Missing account argument.")
 		cli.ShowSubcommandHelp(ctx)
 		return nil
 	}
-	fmt.Println("===CMD getBalance 1===")
 
 	addrArg := ctx.Args().First()
 	accAddr, err := cmdcom.ParseAddress(addrArg, ctx)
 	if err != nil {
 		return err
 	}
-	fmt.Println("===CMD getBalance 2===")
 
 	balance, err := utils.GetBalance(accAddr)
 	if err != nil {
 		return err
 	}
-	fmt.Println("===CMD getBalance 3===")
 
 	ong, err := strconv.ParseUint(balance.Ong, 10, 64)
 	if err != nil {

@@ -124,12 +124,12 @@ func OntInit(native *native.NativeService) ([]byte, error) {
 }
 
 func OntTransfer(native *native.NativeService) ([]byte, error) {
-	fmt.Println("===OntTransfer===")
 	var transfers Transfers
 	source := common.NewZeroCopySource(native.Input)
 	if err := transfers.Deserialization(source); err != nil {
 		return utils.BYTE_FALSE, errors.NewDetailErr(err, errors.ErrNoCode, "[Transfer] Transfers deserialize error!")
 	}
+
 	contract := native.ContextRef.CurrentContext().ContractAddress
 	for _, v := range transfers.States {
 		if v.Value == 0 {

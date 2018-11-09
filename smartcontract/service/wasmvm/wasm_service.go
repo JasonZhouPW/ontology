@@ -21,8 +21,6 @@ import (
 	"bytes"
 	"encoding/binary"
 	"encoding/hex"
-	"fmt"
-
 	"github.com/ontio/ontology/common"
 	"github.com/ontio/ontology/common/log"
 	"github.com/ontio/ontology/core/store"
@@ -129,23 +127,13 @@ func (this *WasmVmService) Invoke() (interface{}, error) {
 	contract := &states.ContractInvokeParam{}
 	contract.Deserialize(bytes.NewBuffer(this.Code))
 	//addr := contract.Address
-	fmt.Printf("contract address is %s\n", contract.Address.ToBase58())
 
 	code, err := this.Store.GetContractState(contract.Address)
 	if err != nil {
-		fmt.Printf("getContract error:%s\n", err)
 		return nil, err
 	}
 
 	this.ContextRef.PushContext(&context.Context{ContractAddress: contract.Address, Code: code.Code})
-
-	//if contract.Code == nil {
-	//	dpcode, err := this.GetContractCodeFromAddress(addr)
-	//	if err != nil {
-	//		return nil, errors.NewErr("get contract  error")
-	//	}
-	//	contract.Code = dpcode
-	//}
 
 	var caller common.Address
 	if this.ContextRef.CallingContext() == nil {
@@ -154,24 +142,16 @@ func (this *WasmVmService) Invoke() (interface{}, error) {
 		caller = this.ContextRef.CallingContext().ContractAddress
 	}
 	this.ContextRef.PushContext(&context.Context{ContractAddress: contract.Address})
-	fmt.Printf("===this.Code:%v\n", code.Code)
-	fmt.Printf("===contract.Method:%v\n", contract.Method)
-	fmt.Printf("===contract.Args:%v\n", contract.Args)
-	fmt.Printf("===contract.Version:%v\n", contract.Version)
 
 	res, err := engine.Call(caller, code.Code, contract.Method, contract.Args, contract.Version)
 
 	if err != nil {
-		fmt.Printf("wasm call error:%s\n", err)
-
 		return nil, err
 	}
 
 	//get the return message
 	result, err := engine.GetVM().GetPointerMemory(uint64(binary.LittleEndian.Uint32(res)))
 	if err != nil {
-		fmt.Printf("wasm call GetPointerMemory error:%s\n", err)
-
 		return nil, err
 	}
 
@@ -179,65 +159,6 @@ func (this *WasmVmService) Invoke() (interface{}, error) {
 	this.ContextRef.PushNotifications(this.Notifications)
 	return result, nil
 }
-
-//
-//func (this *WasmVmService) marshalNeoParams(engine *exec.ExecutionEngine) (bool, error) {
-//	vm := engine.GetVM()
-//	envCall := vm.GetEnvCall()
-//	params := envCall.GetParams()
-//	if len(params) != 1 {
-//		return false, errors.NewErr("[marshalNeoParams]parameter count error while call marshalNativeParams")
-//	}
-//	argbytes, err := vm.GetPointerMemory(params[0])
-//	if err != nil {
-//		return false, err
-//	}
-//	bytesLen := len(argbytes)
-//	args := make([]interface{}, bytesLen/8)
-//	icount := 0
-//	for i := 0; i < bytesLen; i += 8 {
-//		tmpBytes := argbytes[i : i+8]
-//		ptype, err := vm.GetPointerMemory(uint64(binary.LittleEndian.Uint32(tmpBytes[:4])))
-//		if err != nil {
-//			return false, err
-//		}
-//		pvalue, err := vm.GetPointerMemory(uint64(binary.LittleEndian.Uint32(tmpBytes[4:8])))
-//		if err != nil {
-//			return false, err
-//		}
-//		switch strings.ToLower(util.TrimBuffToString(ptype)) {
-//		case "string":
-//			args[icount] = util.TrimBuffToString(pvalue)
-//		case "int":
-//			args[icount], err = strconv.Atoi(util.TrimBuffToString(pvalue))
-//			if err != nil {
-//				return false, err
-//			}
-//		case "int64":
-//			args[icount], err = strconv.ParseInt(util.TrimBuffToString(pvalue), 10, 64)
-//			if err != nil {
-//				return false, err
-//			}
-//		default:
-//			args[icount] = util.TrimBuffToString(pvalue)
-//		}
-//		icount++
-//	}
-//	builder := neovm.NewParamsBuilder(bytes.NewBuffer(nil))
-//	err = buildNeoVMParamInter(builder, []interface{}{args})
-//	if err != nil {
-//		return false, err
-//	}
-//	neoargs := builder.ToArray()
-//	idx, err := vm.SetPointerMemory(neoargs)
-//	if err != nil {
-//		return false, err
-//	}
-//	vm.RestoreCtx()
-//	vm.PushResult(uint64(idx))
-//	return true, nil
-//
-//}
 
 // marshalNativeParams
 // make parameter bytes for call native contract
@@ -303,11 +224,9 @@ func (this *WasmVmService) marshalNativeParams(engine *exec.ExecutionEngine) (bo
 		states[i] = state
 
 	}
-
 	transfer.States = states
 	tbytes := new(bytes.Buffer)
 	transfer.Serialize(tbytes)
-
 	result, err := vm.SetPointerMemory(tbytes.Bytes())
 	if err != nil {
 		return false, err
@@ -319,19 +238,6 @@ func (this *WasmVmService) marshalNativeParams(engine *exec.ExecutionEngine) (bo
 
 //get contract code from address
 func (this *WasmVmService) getContract(bs []byte) ([]byte, error) {
-	//item, err := this.CacheDB.GetContract(address)
-	//if err != nil {
-	//	return nil, errors.NewErr("[getContract] Get contract context error!")
-	//}
-	//log.Debugf("invoke contract address:%x", common.ToArrayReverse(address))
-	//if item == nil {
-	//	return nil, CONTRACT_NOT_EXIST
-	//}
-	//contract, ok := item.Value.(*payload.DeployCode)
-	//if !ok {
-	//	return nil, DEPLOYCODE_TYPE_ERROR
-	//}
-	//return contract.Code, nil
 	address, err := common.AddressParseFromBytes(bs)
 	dep, err := this.CacheDB.GetContract(address)
 	if err != nil {
@@ -380,16 +286,12 @@ func (this *WasmVmService) nativeInvoke(engine *exec.ExecutionEngine) (bool, err
 	//get args
 	argsIdx := params[3]
 	argsbytes, err := vm.GetPointerMemory(argsIdx)
-
 	contract := states.ContractInvokeParam{
 		Version: byte(version),
 		Address: contractAddress,
 		Method:  methodName,
 		Args:    argsbytes,
 	}
-
-	sink := common.ZeroCopySink{}
-	contract.Serialization(&sink)
 
 	native := &native.NativeService{
 		CacheDB:     this.CacheDB,
@@ -403,16 +305,9 @@ func (this *WasmVmService) nativeInvoke(engine *exec.ExecutionEngine) (bool, err
 
 	result, err := native.Invoke()
 	if err != nil {
-		return false, err
-	}
-
-	if err != nil {
 		return false, errors.NewErr("[nativeInvoke]AppCall failed:" + err.Error())
 	}
 
-	this.ContextRef.PopContext()
-	vm.RestoreCtx()
-	//var res string
 	if envCall.GetReturns() {
 		//res = fmt.Sprintf("%s", result)
 
@@ -428,16 +323,15 @@ func (this *WasmVmService) nativeInvoke(engine *exec.ExecutionEngine) (bool, err
 }
 
 // callContract
-// need 4 parameters
+// need 3 parameters
 //0: contract address
-//1: contract code
-//2: method name
-//3: args
+//1: method name
+//2: args
 func (this *WasmVmService) callContract(engine *exec.ExecutionEngine) (bool, error) {
 	vm := engine.GetVM()
 	envCall := vm.GetEnvCall()
 	params := envCall.GetParams()
-	if len(params) != 4 {
+	if len(params) != 3 {
 		return false, errors.NewErr("[callContract]parameter count error while call readMessage")
 	}
 	var contractAddress common.Address
@@ -461,32 +355,12 @@ func (this *WasmVmService) callContract(engine *exec.ExecutionEngine) (bool, err
 
 	}
 
-	//get contract code
-	codeIdx := params[1]
-
-	offchainContractCode, err := vm.GetPointerMemory(codeIdx)
-	if err != nil {
-		return false, errors.NewErr("[callContract]get Contract address failed:" + err.Error())
-	}
-	if offchainContractCode != nil {
-		//contractBytes, err = common.HexToBytes(util.TrimBuffToString(offchainContractCode))
-		//if err != nil {
-		//	return false, err
-		//
-		//}
-		//compute the offchain code address
-		codestring := util.TrimBuffToString(offchainContractCode)
-		//contractAddress = GetContractAddress(codestring, vmtypes.WASMVM)
-		contractAddress, err = GetContractAddress(codestring)
-	}
-	fmt.Printf("")
-	//get method
-	methodName, err := vm.GetPointerMemory(params[2])
+	methodName, err := vm.GetPointerMemory(params[1])
 	if err != nil {
 		return false, errors.NewErr("[callContract]get Contract methodName failed:" + err.Error())
 	}
 	//get args
-	args, err := vm.GetPointerMemory(params[3])
+	args, err := vm.GetPointerMemory(params[2])
 
 	if err != nil {
 		return false, errors.NewErr("[callContract]get Contract arg failed:" + err.Error())
@@ -494,7 +368,6 @@ func (this *WasmVmService) callContract(engine *exec.ExecutionEngine) (bool, err
 	this.ContextRef.PushContext(&context.Context{
 		Code:            vm.VMCode,
 		ContractAddress: vm.ContractAddress})
-	//result, err := this.ContextRef.AppCall(contractAddress, util.TrimBuffToString(methodName), contractBytes, arg)
 
 	bf := new(bytes.Buffer)
 	contract := states.ContractInvokeParam{
@@ -529,37 +402,6 @@ func (this *WasmVmService) callContract(engine *exec.ExecutionEngine) (bool, err
 	return true, nil
 }
 
-//func (this *WasmVmService) GetContractCodeFromAddress(address common.Address) ([]byte, error) {
-//
-//	dcode, err := this.Store.GetContractState(address)
-//	if err != nil {
-//		return nil, err
-//	}
-//
-//	if dcode == nil {
-//		return nil, errors.NewErr("[GetContractCodeFromAddress] deployed code is nil")
-//	}
-//
-//	return dcode.Code.Code, nil
-//
-//}
-
-//func (this *WasmVmService) getContractFromAddr(addr []byte) ([]byte, error) {
-//	addrbytes, err := common.HexToBytes(util.TrimBuffToString(addr))
-//	if err != nil {
-//		return nil, errors.NewErr("get contract address error")
-//	}
-//	contactaddress, err := common.AddressParseFromBytes(addrbytes)
-//	if err != nil {
-//		return nil, errors.NewErr("get contract address error")
-//	}
-//	dpcode, err := this.GetContractCodeFromAddress(contactaddress)
-//	if err != nil {
-//		return nil, errors.NewErr("get contract  error")
-//	}
-//	return dpcode, nil
-//}
-
 //GetContractAddress return contract address
 func GetContractAddress(code string) (common.Address, error) {
 	data, err := hex.DecodeString(code)
@@ -569,46 +411,3 @@ func GetContractAddress(code string) (common.Address, error) {
 
 	return common.AddressFromVmCode(data), nil
 }
-
-//will not call NEO contract
-//buildNeoVMParamInter build neovm invoke param code
-//func buildNeoVMParamInter(builder *neovm.ParamsBuilder, smartContractParams []interface{}) error {
-//	//VM load params in reverse order
-//	for i := len(smartContractParams) - 1; i >= 0; i-- {
-//		switch v := smartContractParams[i].(type) {
-//		case bool:
-//			builder.EmitPushBool(v)
-//		case int:
-//			builder.EmitPushInteger(big.NewInt(int64(v)))
-//		case uint:
-//			builder.EmitPushInteger(big.NewInt(int64(v)))
-//		case int32:
-//			builder.EmitPushInteger(big.NewInt(int64(v)))
-//		case uint32:
-//			builder.EmitPushInteger(big.NewInt(int64(v)))
-//		case int64:
-//			builder.EmitPushInteger(big.NewInt(int64(v)))
-//		case common.Fixed64:
-//			builder.EmitPushInteger(big.NewInt(int64(v.GetData())))
-//		case uint64:
-//			val := big.NewInt(0)
-//			builder.EmitPushInteger(val.SetUint64(uint64(v)))
-//		case string:
-//			builder.EmitPushByteArray([]byte(v))
-//		case *big.Int:
-//			builder.EmitPushInteger(v)
-//		case []byte:
-//			builder.EmitPushByteArray(v)
-//		case []interface{}:
-//			err := buildNeoVMParamInter(builder, v)
-//			if err != nil {
-//				return err
-//			}
-//			builder.EmitPushInteger(big.NewInt(int64(len(v))))
-//			builder.Emit(neovm.PACK)
-//		default:
-//			return fmt.Errorf("unsupported param:%s", v)
-//		}
-//	}
-//	return nil
-//}
