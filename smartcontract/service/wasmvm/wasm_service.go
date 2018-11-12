@@ -47,6 +47,7 @@ type WasmVmService struct {
 	Time          uint32
 	Height        uint32
 	RandomHash    common.Uint256
+	Gas           *uint64
 }
 
 var (
@@ -67,13 +68,13 @@ func (this *WasmVmService) Invoke() (interface{}, error) {
 
 	stateMachine := NewWasmStateMachine()
 	//register the "CallContract" function
-	stateMachine.Register("ONT_CallContract", this.callContract)
+	stateMachine.Register(exec.APPCALL_NAME, this.callContract)
 
-	stateMachine.Register("ONT_NativeInvoke", this.nativeInvoke)
+	stateMachine.Register(exec.NATIVE_INVOKE_NAME, this.nativeInvoke)
 	stateMachine.Register("ONT_MarshalNativeParams", this.marshalNativeParams)
 	//stateMachine.Register("ONT_MarshalNeoParams", this.marshalNeoParams)
 	//runtime
-	stateMachine.Register("ONT_Runtime_CheckWitness", this.runtimeCheckWitness)
+	stateMachine.Register(exec.RUNTIME_CHECKWITNESS_NAME, this.runtimeCheckWitness)
 	stateMachine.Register("ONT_Runtime_Notify", this.runtimeNotify)
 	stateMachine.Register("ONT_Runtime_CheckSig", this.runtimeCheckSig)
 	stateMachine.Register("ONT_Runtime_GetTime", this.runtimeGetTime)
@@ -110,9 +111,9 @@ func (this *WasmVmService) Invoke() (interface{}, error) {
 	stateMachine.Register("ONT_Header_GetNextConsensus", this.headerGetNextConsensus)
 
 	//storage
-	stateMachine.Register("ONT_Storage_Put", this.putstore)
-	stateMachine.Register("ONT_Storage_Get", this.getstore)
-	stateMachine.Register("ONT_Storage_Delete", this.deletestore)
+	stateMachine.Register(exec.STORAGE_PUT_NAME, this.putstore)
+	stateMachine.Register(exec.STORAGE_GET_NAME, this.getstore)
+	stateMachine.Register(exec.STORAGE_DELETE_NAME, this.deletestore)
 
 	//transaction
 	stateMachine.Register("ONT_Transaction_GetHash", this.transactionGetHash)
@@ -122,6 +123,7 @@ func (this *WasmVmService) Invoke() (interface{}, error) {
 	engine := exec.NewExecutionEngine(
 		new(util.ECDsaCrypto),
 		stateMachine,
+		this.Gas,
 	)
 
 	contract := &states.ContractInvokeParam{}

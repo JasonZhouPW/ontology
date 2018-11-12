@@ -122,7 +122,6 @@ func (this *SmartContract) checkContexts() bool {
 // Execute is smart contract execute manager
 // According different vm type to launch different service
 func (this *SmartContract) NewExecuteEngine(code []byte) (context.Engine, error) {
-	fmt.Printf("===NewExecuteEngine===%v\n", code)
 	if !this.checkContexts() {
 		return nil, fmt.Errorf("%s", "engine over max limit!")
 	}
@@ -151,6 +150,7 @@ func (this *SmartContract) NewExecuteEngine(code []byte) (context.Engine, error)
 		Time:       this.Config.Time,
 		Height:     this.Config.Height,
 		RandomHash: this.Config.RandomHash,
+		Gas:		&this.Gas,
 		//Engine:     vm.NewExecutionEngine(),
 		//Engine:     exec.NewExecutionEngine(),
 

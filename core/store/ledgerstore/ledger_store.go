@@ -53,6 +53,7 @@ import (
 	"github.com/ontio/ontology/smartcontract/service/neovm"
 	sstate "github.com/ontio/ontology/smartcontract/states"
 	"github.com/ontio/ontology/smartcontract/storage"
+	"github.com/ontio/ontology/vm/wasmvm/exec"
 )
 
 const (
@@ -913,7 +914,7 @@ func (this *LedgerStoreImp) PreExecuteContract(tx *types.Transaction) (*sstate.P
 			}
 
 			hex := common.ToHexString(result.([]byte))
-			return &sstate.PreExecResult{State: event.CONTRACT_STATE_SUCCESS, Gas: 0, Result: hex}, nil
+			return &sstate.PreExecResult{State: event.CONTRACT_STATE_SUCCESS, Gas: exec.MIN_TRANSACTION_GAS * tx.GasPrice , Result: hex}, nil
 		}
 
 		//start the smart contract executive function
