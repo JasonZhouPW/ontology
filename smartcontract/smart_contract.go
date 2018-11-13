@@ -150,7 +150,7 @@ func (this *SmartContract) NewExecuteEngine(code []byte) (context.Engine, error)
 		Time:       this.Config.Time,
 		Height:     this.Config.Height,
 		RandomHash: this.Config.RandomHash,
-		Gas:		&this.Gas,
+		Gas:        &this.Gas,
 		//Engine:     vm.NewExecutionEngine(),
 		//Engine:     exec.NewExecutionEngine(),
 

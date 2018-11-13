@@ -74,13 +74,13 @@ func newStack(depth int) *vmstack {
 func NewExecutionEngine( //container interfaces.CodeContainer,
 	crypto interfaces.Crypto,
 	service InteropServiceInterface,
-	thegas *uint64	) *ExecutionEngine {
+	thegas *uint64) *ExecutionEngine {
 
 	engine := &ExecutionEngine{
 		crypto: crypto,
 		//CodeContainer: container,
 		service: NewInteropService(),
-		gas:thegas,
+		gas:     thegas,
 	}
 	if service != nil {
 		engine.service.MergeMap(service.GetServiceMap())

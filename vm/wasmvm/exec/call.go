@@ -25,7 +25,6 @@ package exec
 import (
 	"errors"
 	"github.com/ontio/ontology/common/log"
-
 )
 
 func (vm *VM) doCall(compiled compiledFunction, index int64) {
@@ -63,12 +62,11 @@ func (vm *VM) doCall(compiled compiledFunction, index int64) {
 
 		v, ok := vm.Services[compiled.name]
 		if ok {
-			price := vm.getCostPrice(compiled.name,locals)
+			price := vm.getCostPrice(compiled.name, locals)
 
-			if !vm.CheckUseGas(price){
+			if !vm.CheckUseGas(price) {
 				panic("[doCall]Not enough gas!")
 			}
-
 
 			rtn, err := v(vm.Engine)
 			if err != nil || !rtn {
@@ -148,7 +146,7 @@ func (vm *VM) callIndirect() {
 	vm.doCall(vm.compiledFuncs[elemIndex], int64(index))
 }
 
-func (vm *VM)getCostPrice(name string,params []uint64) uint64{
+func (vm *VM) getCostPrice(name string, params []uint64) uint64 {
 
 	switch name {
 	case STORAGE_PUT_NAME:
@@ -163,7 +161,7 @@ func (vm *VM)getCostPrice(name string,params []uint64) uint64{
 	return uint64(0)
 }
 
-func (vm *VM)storeGasCost(params []uint64) uint64{
+func (vm *VM) storeGasCost(params []uint64) uint64 {
 
 	if len(params) != 2 {
 		panic("[StoreGasCost]Param count error!")

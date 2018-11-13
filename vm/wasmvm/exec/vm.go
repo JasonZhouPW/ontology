@@ -35,7 +35,6 @@ import (
 	"github.com/ontio/ontology/vm/wasmvm/memory"
 	"github.com/ontio/ontology/vm/wasmvm/wasm"
 	ops "github.com/ontio/ontology/vm/wasmvm/wasm/operators"
-
 )
 
 var (
@@ -86,7 +85,6 @@ func (ec *EnvCall) GetParams() []uint64 {
 func (ec *EnvCall) GetReturns() bool {
 	return ec.envReturns
 }
-
 
 // VM is the execution context for executing WebAssembly bytecode.
 type VM struct {
@@ -395,7 +393,7 @@ func (vm *VM) execCode(isinside bool, compiled compiledFunction) uint64 {
 outer:
 	for int(vm.ctx.pc) < len(vm.ctx.code) {
 
-		if !vm.CheckUseGas(OPCODE_GAS){
+		if !vm.CheckUseGas(OPCODE_GAS) {
 			panic("Not enough gas!")
 		}
 

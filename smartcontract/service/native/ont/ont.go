@@ -239,7 +239,7 @@ func GetBalanceValue(native *native.NativeService, flag byte) ([]byte, error) {
 	if err != nil {
 		return utils.BYTE_FALSE, errors.NewDetailErr(err, errors.ErrNoCode, "[GetBalanceValue] get from address error!")
 	}
-	fmt.Printf("address is %s\n",from.ToBase58())
+	fmt.Printf("address is %s\n", from.ToBase58())
 
 	contract := native.ContextRef.CurrentContext().ContractAddress
 	var key []byte
@@ -256,7 +256,7 @@ func GetBalanceValue(native *native.NativeService, flag byte) ([]byte, error) {
 	if err != nil {
 		return utils.BYTE_FALSE, errors.NewDetailErr(err, errors.ErrNoCode, "[GetBalanceValue] address parse error!")
 	}
-	fmt.Printf("amount is %d\n",amount)
+	fmt.Printf("amount is %d\n", amount)
 
 	return types.BigIntToBytes(big.NewInt(int64(amount))), nil
 }

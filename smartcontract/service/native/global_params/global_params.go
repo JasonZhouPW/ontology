@@ -49,7 +49,6 @@ func InitGlobalParams() {
 }
 
 func RegisterParamContract(native *native.NativeService) {
-	fmt.Println("===RegisterParamContract===")
 	native.Register(INIT_NAME, ParamInit)
 	native.Register(ACCEPT_ADMIN_NAME, AcceptAdmin)
 	native.Register(TRANSFER_ADMIN_NAME, TransferAdmin)

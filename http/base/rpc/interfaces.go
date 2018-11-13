@@ -281,17 +281,11 @@ func SendRawTransaction(params []interface{}) map[string]interface{} {
 			return responsePack(berr.INVALID_TRANSACTION, "")
 		}
 		hash = txn.Hash()
-		fmt.Println("===SendRawTransaction param 2")
-		fmt.Printf("SendRawTransaction recv %s", hash.ToHexString())
-		log.Debugf("SendRawTransaction recv %s", hash.ToHexString())
+
 		if txn.TxType == types.Invoke || txn.TxType == types.Deploy {
-			fmt.Println("===SendRawTransaction param 3")
-			fmt.Printf("len(params):%d\n", len(params))
 			if len(params) > 1 {
-				fmt.Println("===SendRawTransaction param 4")
 				preExec, ok := params[1].(float64)
 				if ok && preExec == 1 {
-					fmt.Println("===SendRawTransaction param 5")
 
 					result, err := bactor.PreExecuteContract(txn)
 					if err != nil {
@@ -302,8 +296,6 @@ func SendRawTransaction(params []interface{}) map[string]interface{} {
 			}
 		}
 
-		log.Debugf("SendRawTransaction send to txpool %s", hash.ToHexString())
-		fmt.Printf("SendRawTransaction send to txpool %s", hash.ToHexString())
 		if errCode, desc := bcomn.SendTxToPool(txn); errCode != ontErrors.ErrNoError {
 			log.Warnf("SendRawTransaction verified %s error: %s", hash.ToHexString(), desc)
 			return responsePack(int64(errCode), desc)

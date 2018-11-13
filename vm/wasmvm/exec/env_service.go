@@ -31,6 +31,7 @@ import (
 	"github.com/ontio/ontology/common/serialization"
 	"github.com/ontio/ontology/vm/wasmvm/memory"
 	"github.com/ontio/ontology/vm/wasmvm/util"
+	"golang.org/x/crypto/ripemd160"
 )
 
 type Args struct {
@@ -79,6 +80,8 @@ func NewInteropService() *InteropService {
 	service.Register("i64Subtract", int64Subtract)
 	service.Register("SHA1", hashSha1)
 	service.Register("SHA256", hashSha256)
+	service.Register("Hash160", hash160)
+	service.Register("Hash256", hash256)
 
 	//parameter apis
 	service.Register("ONT_ReadInt32Param", readInt32Param)
@@ -853,4 +856,50 @@ func hashSha256(engine *ExecutionEngine) (bool, error) {
 	vm.RestoreCtx()
 	vm.PushResult(uint64(idx))
 	return true, nil
+}
+
+func hash160(engine *ExecutionEngine) (bool, error) {
+	vm := engine.GetVM()
+	envCall := vm.envCall
+	params := envCall.envParams
+	if len(params) != 1 {
+		return false, errors.New("[hashSha1]parameter count error")
+	}
+	item, err := vm.GetPointerMemory(params[0])
+	if err != nil {
+		return false, err
+	}
+
+	temp := sha256.Sum256(item)
+	md := ripemd160.New()
+	md.Write(temp[:])
+	bt := md.Sum(nil)
+
+	idx, err := vm.SetPointerMemory(bt)
+	vm.RestoreCtx()
+	vm.PushResult(uint64(idx))
+	return true, nil
+
+}
+
+func hash256(engine *ExecutionEngine) (bool, error) {
+	vm := engine.GetVM()
+	envCall := vm.envCall
+	params := envCall.envParams
+	if len(params) != 1 {
+		return false, errors.New("[hashSha1]parameter count error")
+	}
+	item, err := vm.GetPointerMemory(params[0])
+	if err != nil {
+		return false, err
+	}
+
+	temp := sha256.Sum256(item)
+	data := sha256.Sum256(temp[:])
+
+	idx, err := vm.SetPointerMemory(data)
+	vm.RestoreCtx()
+	vm.PushResult(uint64(idx))
+	return true, nil
+
 }

@@ -272,7 +272,6 @@ func (this *LedgerStoreImp) initHeaderIndexList() error {
 }
 
 func (this *LedgerStoreImp) initStore() error {
-	fmt.Println("==initStore==")
 	blockHeight := this.GetCurrentBlockHeight()
 
 	_, stateHeight, err := this.stateStore.GetCurrentBlock()
@@ -547,7 +546,6 @@ func (this *LedgerStoreImp) AddBlock(block *types.Block) error {
 }
 
 func (this *LedgerStoreImp) saveBlockToBlockStore(block *types.Block) error {
-	fmt.Println("==saveBlockToBlockStore==")
 	blockHash := block.Hash()
 	blockHeight := block.Header.Height
 
@@ -569,7 +567,6 @@ func (this *LedgerStoreImp) saveBlockToBlockStore(block *types.Block) error {
 }
 
 func (this *LedgerStoreImp) saveBlockToStateStore(block *types.Block) error {
-	fmt.Println("==saveBlockToStateStore===")
 	blockHash := block.Hash()
 	blockHeight := block.Header.Height
 
@@ -651,7 +648,6 @@ func (this *LedgerStoreImp) resetSavingBlock() {
 
 //saveBlock do the job of execution samrt contract and commit block to store.
 func (this *LedgerStoreImp) saveBlock(block *types.Block) error {
-	fmt.Println("==saveBlock==")
 	blockHash := block.Hash()
 	blockHeight := block.Header.Height
 	if this.isSavingBlock() {
@@ -691,7 +687,6 @@ func (this *LedgerStoreImp) saveBlock(block *types.Block) error {
 		return fmt.Errorf("eventStore.CommitTo height:%d error %s", blockHeight, err)
 	}
 	this.setCurrentBlock(blockHeight, blockHash)
-	fmt.Println("save block end")
 	if events.DefActorPublisher != nil {
 		events.DefActorPublisher.Publish(
 			message.TOPIC_SAVE_BLOCK_COMPLETE,
@@ -703,7 +698,6 @@ func (this *LedgerStoreImp) saveBlock(block *types.Block) error {
 }
 
 func (this *LedgerStoreImp) handleTransaction(overlay *overlaydb.OverlayDB, block *types.Block, tx *types.Transaction) error {
-	fmt.Println("===handleTransaction")
 	txHash := tx.Hash()
 	notify := &event.ExecuteNotify{TxHash: txHash, State: event.CONTRACT_STATE_FAIL}
 	switch tx.TxType {
@@ -717,7 +711,6 @@ func (this *LedgerStoreImp) handleTransaction(overlay *overlaydb.OverlayDB, bloc
 		}
 		SaveNotify(this.eventStore, txHash, notify)
 	case types.Invoke:
-		fmt.Println("===handleTransaction    invoke")
 
 		err := this.stateStore.HandleInvokeTransaction(this, overlay, tx, block, notify)
 		if overlay.Error() != nil {
@@ -893,7 +886,6 @@ func (this *LedgerStoreImp) PreExecuteContract(tx *types.Transaction) (*sstate.P
 		if IsNativeContract(txStruct.Address) {
 			parsedAddr, err := common.AddressParseFromBytes(txStruct.Address)
 			if err != nil {
-				fmt.Println("parse address error!!")
 				return nil, errors.NewErr("parse address error")
 			}
 			contract := sstate.ContractInvokeParam{
@@ -914,7 +906,7 @@ func (this *LedgerStoreImp) PreExecuteContract(tx *types.Transaction) (*sstate.P
 			}
 
 			hex := common.ToHexString(result.([]byte))
-			return &sstate.PreExecResult{State: event.CONTRACT_STATE_SUCCESS, Gas: exec.MIN_TRANSACTION_GAS * tx.GasPrice , Result: hex}, nil
+			return &sstate.PreExecResult{State: event.CONTRACT_STATE_SUCCESS, Gas: exec.MIN_TRANSACTION_GAS * tx.GasPrice, Result: hex}, nil
 		}
 
 		//start the smart contract executive function

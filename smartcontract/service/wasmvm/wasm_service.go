@@ -120,6 +120,11 @@ func (this *WasmVmService) Invoke() (interface{}, error) {
 	stateMachine.Register("ONT_Transaction_GetType", this.transactionGetType)
 	stateMachine.Register("ONT_Transaction_GetAttributes", this.transactionGetAttributes)
 
+	//contract
+	stateMachine.Register("ONT_Contract_Create", this.contractCreate)
+	stateMachine.Register("ONT_Contract_Migrate", this.contractMigrate)
+	stateMachine.Register("ONT_Contract_Delete", this.contractDelete)
+
 	engine := exec.NewExecutionEngine(
 		new(util.ECDsaCrypto),
 		stateMachine,

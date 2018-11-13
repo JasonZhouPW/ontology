@@ -49,12 +49,9 @@ func RegisterOngContract(native *native.NativeService) {
 }
 
 func OngInit(native *native.NativeService) ([]byte, error) {
-	fmt.Println("===OngInit")
 	contract := native.ContextRef.CurrentContext().ContractAddress
-	fmt.Println("===OngInit 2")
 
 	amount, err := utils.GetStorageUInt64(native, ont.GenTotalSupplyKey(contract))
-	fmt.Println("===OngInit 3")
 
 	if err != nil {
 		return utils.BYTE_FALSE, err
@@ -63,13 +60,11 @@ func OngInit(native *native.NativeService) ([]byte, error) {
 	if amount > 0 {
 		return utils.BYTE_FALSE, errors.NewErr("Init ong has been completed!")
 	}
-	fmt.Println("===OngInit 4")
 
 	item := utils.GenUInt64StorageItem(constants.ONG_TOTAL_SUPPLY)
 	native.CacheDB.Put(ont.GenTotalSupplyKey(contract), item.ToArray())
 	native.CacheDB.Put(append(contract[:], utils.OntContractAddress[:]...), item.ToArray())
 	ont.AddNotifications(native, contract, &ont.State{To: utils.OntContractAddress, Value: constants.ONG_TOTAL_SUPPLY})
-	fmt.Println("===OngInit 5")
 
 	return utils.BYTE_TRUE, nil
 }
