@@ -69,9 +69,7 @@ func RuntimeCheckWitness(service *NeoVmService, engine *vm.ExecutionEngine) erro
 }
 
 func RuntimeSerialize(service *NeoVmService, engine *vm.ExecutionEngine) error {
-	fmt.Println("=========RuntimeSerialize==========")
 	item := vm.PopStackItem(engine)
-	fmt.Printf("%v\n", item)
 	buf, err := SerializeStackItem(item)
 	if err != nil {
 		return err

@@ -751,14 +751,14 @@ func rawMashalParams(engine *ExecutionEngine) (bool, error) {
 	envCall := engine.vm.envCall
 	params := envCall.envParams
 	if len(params) != 1 {
-		return false, errors.New("[jsonMashalParams]parameter count error")
+		return false, errors.New("[rawMashalParams]parameter count error")
 	}
 
 	addr := params[0]
 
 	pBytes, err := engine.vm.GetPointerMemory(addr)
 	if err != nil {
-		return false, errors.New("[jsonMashalParams] GetPointerMemory err:" + err.Error())
+		return false, errors.New("[rawMashalParams] GetPointerMemory err:" + err.Error())
 	}
 	bf := bytes.NewBuffer(nil)
 
@@ -767,7 +767,7 @@ func rawMashalParams(engine *ExecutionEngine) (bool, error) {
 		typeIdx := binary.LittleEndian.Uint32(pBytes[i : i+4])
 		typeBytes, err := engine.vm.GetPointerMemory(uint64(typeIdx))
 		if err != nil {
-			return false, errors.New("[jsonMashalParams] GetPointerMemory err:" + err.Error())
+			return false, errors.New("[rawMashalParams] GetPointerMemory err:" + err.Error())
 		}
 
 		sType := strings.ToLower(util.TrimBuffToString(typeBytes))
@@ -789,21 +789,20 @@ func rawMashalParams(engine *ExecutionEngine) (bool, error) {
 			intBytes := uint64(binary.LittleEndian.Uint32(pBytes[i+4 : i+8]))
 			str, err := engine.vm.GetPointerMemory(intBytes)
 			if err != nil {
-				return false, errors.New("[jsonMashalParams] GetPointerMemory err:" + err.Error())
+				return false, errors.New("[rawMashalParams] GetPointerMemory err:" + err.Error())
 			}
-
 			tmp := bytes.NewBuffer(nil)
 			serialization.WriteString(tmp, util.TrimBuffToString(str))
 			bf.Write(tmp.Bytes())
 			i += 7
 		default:
-			return false, errors.New("[jsonMashalParams]  not support type :" + string(typeBytes))
+			return false, errors.New("[rawMashalParams]  not support type :" + string(typeBytes))
 		}
 
 	}
 	argIdx, err := engine.vm.SetPointerMemory(bf.Bytes())
 	if err != nil {
-		return false, errors.New("[jsonMashalParams] SetPointerMemory err:" + err.Error())
+		return false, errors.New("[rawMashalParams] SetPointerMemory err:" + err.Error())
 	}
 	engine.vm.RestoreCtx()
 	if envCall.envReturns {

@@ -82,7 +82,6 @@ func (self *StateStore) HandleDeployTransaction(store store.LedgerStore, overlay
 		}
 
 		gasLimit := createGasPrice.(uint64) + calcGasByCodeLen(len(deploy.Code), uintCodePrice.(uint64))
-		fmt.Printf("gasLimit is %d\n", gasLimit)
 		balance, err := isBalanceSufficient(tx.Payer, cache, config, store, gasLimit*tx.GasPrice)
 		if err != nil {
 			if err := costInvalidGas(tx.Payer, balance, config, overlay, store, notify); err != nil {
@@ -90,7 +89,6 @@ func (self *StateStore) HandleDeployTransaction(store store.LedgerStore, overlay
 			}
 			return err
 		}
-		fmt.Printf("balance is %d\n", balance)
 
 		if tx.GasLimit < gasLimit {
 			if err := costInvalidGas(tx.Payer, tx.GasLimit*tx.GasPrice, config, overlay, store, notify); err != nil {
@@ -100,8 +98,6 @@ func (self *StateStore) HandleDeployTransaction(store store.LedgerStore, overlay
 
 		}
 		gasConsumed = gasLimit * tx.GasPrice
-
-		fmt.Printf("gasConsumed is %d\n", gasConsumed)
 
 		notifies, err = chargeCostGas(tx.Payer, gasConsumed, config, cache, store)
 		if err != nil {
@@ -305,7 +301,6 @@ func SaveNotify(eventStore scommon.EventStore, txHash common.Uint256, notify *ev
 
 func genNativeTransferCode(from, to common.Address, value uint64) []byte {
 	transfer := ont.Transfers{States: []ont.State{{From: from, To: to, Value: value}}}
-	fmt.Printf("genNativeTransferCode transfer is %v\n", transfer)
 	tr := new(bytes.Buffer)
 	transfer.Serialize(tr)
 	return tr.Bytes()
@@ -338,7 +333,6 @@ func chargeCostGas(payer common.Address, gas uint64, config *smartcontract.Confi
 	service, _ := sc.NewNativeService()
 	_, err := service.NativeCall(utils.OngContractAddress, "transfer", params)
 	if err != nil {
-		fmt.Printf("chargeCostGas error:%s\n", err.Error())
 		return nil, err
 	}
 	return sc.Notifications, nil
@@ -401,7 +395,6 @@ func getBalanceFromNative(config *smartcontract.Config, cache *storage.CacheDB, 
 
 	service, _ := sc.NewNativeService()
 	result, err := service.NativeCall(utils.OngContractAddress, ont.BALANCEOF_NAME, bf.Bytes())
-	fmt.Printf(" result is %v\n", result)
 	if err != nil {
 		return 0, err
 	}

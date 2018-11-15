@@ -71,44 +71,44 @@ func (this *WasmVmService) Invoke() (interface{}, error) {
 	stateMachine.Register(exec.APPCALL_NAME, this.callContract)
 
 	stateMachine.Register(exec.NATIVE_INVOKE_NAME, this.nativeInvoke)
-	stateMachine.Register("ONT_MarshalNativeParams", this.marshalNativeParams)
+	stateMachine.Register(exec.MARSHALNATIVEPARAMS_NAME, this.marshalNativeParams)
 	//stateMachine.Register("ONT_MarshalNeoParams", this.marshalNeoParams)
 	//runtime
 	stateMachine.Register(exec.RUNTIME_CHECKWITNESS_NAME, this.runtimeCheckWitness)
-	stateMachine.Register("ONT_Runtime_Notify", this.runtimeNotify)
-	stateMachine.Register("ONT_Runtime_CheckSig", this.runtimeCheckSig)
-	stateMachine.Register("ONT_Runtime_GetTime", this.runtimeGetTime)
-	stateMachine.Register("ONT_Runtime_Log", this.runtimeLog)
-	stateMachine.Register("ONT_Runtime_RaiseException", this.runtimeRaiseException)
+	stateMachine.Register(exec.RUNTIME_NOTIFY_NAME, this.runtimeNotify)
+	stateMachine.Register(exec.RUNTIME_CHECKSIG_NAME, this.runtimeCheckSig)
+	stateMachine.Register(exec.RUNTIME_GETTIME_NAME, this.runtimeGetTime)
+	stateMachine.Register(exec.RUNTIME_LOG_NAME, this.runtimeLog)
+	stateMachine.Register(exec.RUNTIME_RAISEEXCEPTION_NAME, this.runtimeRaiseException)
 	//attribute
-	stateMachine.Register("ONT_Attribute_GetUsage", this.attributeGetUsage)
-	stateMachine.Register("ONT_Attribute_GetData", this.attributeGetData)
+	stateMachine.Register(exec.ATTRIBUTE_GETUSAGE_NAME, this.attributeGetUsage)
+	stateMachine.Register(exec.ATTRIBUTE_GETDATA_NAME, this.attributeGetData)
 	//block
-	stateMachine.Register("ONT_Block_GetCurrentHeaderHash", this.blockGetCurrentHeaderHash)
-	stateMachine.Register("ONT_Block_GetCurrentHeaderHeight", this.blockGetCurrentHeaderHeight)
-	stateMachine.Register("ONT_Block_GetCurrentBlockHash", this.blockGetCurrentBlockHash)
-	stateMachine.Register("ONT_Block_GetCurrentBlockHeight", this.blockGetCurrentBlockHeight)
-	stateMachine.Register("ONT_Block_GetTransactionByHash", this.blockGetTransactionByHash)
-	stateMachine.Register("ONT_Block_GetTransactionCount", this.blockGetTransactionCount)
-	stateMachine.Register("ONT_Block_GetTransactions", this.blockGetTransactions)
+	stateMachine.Register(exec.BLOCK_GETHEADERHASH_NAME, this.blockGetCurrentHeaderHash)
+	stateMachine.Register(exec.BLOCK_GETHEADERHEIGHT_NAME, this.blockGetCurrentHeaderHeight)
+	stateMachine.Register(exec.BLOCK_GETBLOCKHASH_NAME, this.blockGetCurrentBlockHash)
+	stateMachine.Register(exec.BLOCK_GETBLOCKHEIGHT_NAME, this.blockGetCurrentBlockHeight)
+	stateMachine.Register(exec.BLOCK_GETTRANSACTIONBYHASH_NAME, this.blockGetTransactionByHash)
+	stateMachine.Register(exec.BLOCK_GETTRANSACTIONCOUNT_NAME, this.blockGetTransactionCount)
+	stateMachine.Register(exec.BLOCK_GETTRANSACTIONS, this.blockGetTransactions)
 
 	//blockchain
-	stateMachine.Register("ONT_BlockChain_GetHeight", this.blockChainGetHeight)
-	stateMachine.Register("ONT_BlockChain_GetHeaderByHeight", this.blockChainGetHeaderByHeight)
-	stateMachine.Register("ONT_BlockChain_GetHeaderByHash", this.blockChainGetHeaderByHash)
-	stateMachine.Register("ONT_BlockChain_GetBlockByHeight", this.blockChainGetBlockByHeight)
-	stateMachine.Register("ONT_BlockChain_GetBlockByHash", this.blockChainGetBlockByHash)
-	stateMachine.Register("ONT_BlockChain_GetContract", this.blockChainGetContract)
+	stateMachine.Register(exec.BLOCKCHAIN_GETHEGITH_NAME, this.blockChainGetHeight)
+	stateMachine.Register(exec.BLOCKCHAIN_GETHEADERBYHEIGHT_NAME, this.blockChainGetHeaderByHeight)
+	stateMachine.Register(exec.BLOCKCHAIN_GETHEADERBYHASH_NAME, this.blockChainGetHeaderByHash)
+	stateMachine.Register(exec.BLOCKCHAIN_GETBLOCKBYHEIGHT_NAME, this.blockChainGetBlockByHeight)
+	stateMachine.Register(exec.BLOCKCHAIN_GETBLOCKBYHASH_NAME, this.blockChainGetBlockByHash)
+	stateMachine.Register(exec.BLOCKCHAIN_GETCONTRACT_NAME, this.blockChainGetContract)
 
 	//header
-	stateMachine.Register("ONT_Header_GetHash", this.headerGetHash)
-	stateMachine.Register("ONT_Header_GetVersion", this.headerGetVersion)
-	stateMachine.Register("ONT_Header_GetPrevHash", this.headerGetPrevHash)
-	stateMachine.Register("ONT_Header_GetMerkleRoot", this.headerGetMerkleRoot)
-	stateMachine.Register("ONT_Header_GetIndex", this.headerGetIndex)
-	stateMachine.Register("ONT_Header_GetTimestamp", this.headerGetTimestamp)
-	stateMachine.Register("ONT_Header_GetConsensusData", this.headerGetConsensusData)
-	stateMachine.Register("ONT_Header_GetNextConsensus", this.headerGetNextConsensus)
+	stateMachine.Register(exec.HEADER_GETHASH_NAME, this.headerGetHash)
+	stateMachine.Register(exec.HEADER_GETVERSION_NAME, this.headerGetVersion)
+	stateMachine.Register(exec.HEADER_GETPREVHASH_NAME, this.headerGetPrevHash)
+	stateMachine.Register(exec.HEADER_GETMERKLEROOT_NAME, this.headerGetMerkleRoot)
+	stateMachine.Register(exec.HEADER_GETINDEX_NAME, this.headerGetIndex)
+	stateMachine.Register(exec.HEADER_GETTIMESTAMP_NAME, this.headerGetTimestamp)
+	stateMachine.Register(exec.HEADER_GETCONSENSUSDATA_NAME, this.headerGetConsensusData)
+	stateMachine.Register(exec.HEADER_GETNEXTCONSENSUS_NAME, this.headerGetNextConsensus)
 
 	//storage
 	stateMachine.Register(exec.STORAGE_PUT_NAME, this.putstore)
@@ -116,14 +116,14 @@ func (this *WasmVmService) Invoke() (interface{}, error) {
 	stateMachine.Register(exec.STORAGE_DELETE_NAME, this.deletestore)
 
 	//transaction
-	stateMachine.Register("ONT_Transaction_GetHash", this.transactionGetHash)
-	stateMachine.Register("ONT_Transaction_GetType", this.transactionGetType)
-	stateMachine.Register("ONT_Transaction_GetAttributes", this.transactionGetAttributes)
+	stateMachine.Register(exec.TRANSACTION_GETHASH_NAME, this.transactionGetHash)
+	stateMachine.Register(exec.TRANSACTION_GETTYPE_NAME, this.transactionGetType)
+	stateMachine.Register(exec.TRANSACTION_GETATTRIBUTES_NAME, this.transactionGetAttributes)
 
 	//contract
-	stateMachine.Register("ONT_Contract_Create", this.contractCreate)
-	stateMachine.Register("ONT_Contract_Migrate", this.contractMigrate)
-	stateMachine.Register("ONT_Contract_Delete", this.contractDelete)
+	stateMachine.Register(exec.WASM_CONTRACT_CREATE_NAME, this.contractCreate)
+	stateMachine.Register(exec.WASM_CONTRACT_MIGRATE_NAME, this.contractMigrate)
+	stateMachine.Register(exec.WASM_CONTRACT_DELETE_NAME, this.contractDelete)
 
 	engine := exec.NewExecutionEngine(
 		new(util.ECDsaCrypto),
@@ -341,6 +341,7 @@ func (this *WasmVmService) callContract(engine *exec.ExecutionEngine) (bool, err
 	if len(params) != 3 {
 		return false, errors.NewErr("[callContract]parameter count error while call readMessage")
 	}
+
 	var contractAddress common.Address
 	//var contractBytes []byte
 	//get contract address
@@ -351,11 +352,11 @@ func (this *WasmVmService) callContract(engine *exec.ExecutionEngine) (bool, err
 	}
 
 	if addr != nil {
-		addrbytes, err := common.HexToBytes(util.TrimBuffToString(addr))
-		if err != nil {
-			return false, errors.NewErr("[callContract]get contract address error:" + err.Error())
-		}
-		contractAddress, err = common.AddressParseFromBytes(addrbytes)
+		//addrbytes, err := common.HexToBytes(util.TrimBuffToString(addr))
+		//if err != nil {
+		//	return false, errors.NewErr("[callContract]get contract address error:" + err.Error())
+		//}
+		contractAddress, err = common.AddressFromBase58(util.TrimBuffToString(addr))
 		if err != nil {
 			return false, errors.NewErr("[callContract]get contract address error:" + err.Error())
 		}

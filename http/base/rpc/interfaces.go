@@ -263,7 +263,6 @@ func GetStorage(params []interface{}) map[string]interface{} {
 // A JSON example for sendrawtransaction method as following:
 //   {"jsonrpc": "2.0", "method": "sendrawtransaction", "params": ["raw transactioin in hex"], "id": 0}
 func SendRawTransaction(params []interface{}) map[string]interface{} {
-	fmt.Printf("===SendRawTransaction param is %v\n", params)
 	if len(params) < 1 {
 		return responsePack(berr.INVALID_PARAMS, nil)
 	}

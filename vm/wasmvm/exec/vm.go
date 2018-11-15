@@ -129,6 +129,20 @@ func (vm *VM) CheckUseGas(gas uint64) bool {
 	return true
 }
 
+func (vm *VM) CheckMemGas() bool {
+	n := len(vm.memory.Memory) / wasmPageSize
+	//memory less than 64k will not charge gas
+	if n > 1 {
+		if *vm.Engine.gas < uint64(n)*VM_MEM_UNIT_GAS {
+			return false
+		} else {
+			*vm.Engine.gas -= uint64(n) * VM_MEM_UNIT_GAS
+			return true
+		}
+	}
+	return true
+}
+
 //alloc memory and return the first index
 func (vm *VM) Malloc(size int) (int, error) {
 	return vm.memory.Malloc(size)
@@ -393,12 +407,12 @@ func (vm *VM) execCode(isinside bool, compiled compiledFunction) uint64 {
 outer:
 	for int(vm.ctx.pc) < len(vm.ctx.code) {
 
+		op := vm.ctx.code[vm.ctx.pc]
+		vm.ctx.pc++
+
 		if !vm.CheckUseGas(OPCODE_GAS) {
 			panic("Not enough gas!")
 		}
-
-		op := vm.ctx.code[vm.ctx.pc]
-		vm.ctx.pc++
 
 		switch op {
 		case ops.Return:
@@ -541,7 +555,12 @@ func (vm *VM) loadModule(module *wasm.Module) error {
 		if len(module.Memory.Entries) > 1 {
 			return ErrMultipleLinearMemories
 		}
-		vm.memory.Memory = make([]byte, uint(module.Memory.Entries[0].Limits.Initial)*wasmPageSize)
+
+		size := uint(module.Memory.Entries[0].Limits.Initial)
+		if size > uint(MAX_PAGE_GROWTH){
+			return errors.New("[loadModule]memory size is to large")
+		}
+		vm.memory.Memory = make([]byte, size * wasmPageSize)
 		copy(vm.memory.Memory, module.LinearMemoryIndexSpace[0])
 	} else if len(module.LinearMemoryIndexSpace) > 0 {
 		//add imported memory ,all mem access will be on the imported mem

@@ -59,9 +59,7 @@ func RegisterParamContract(native *native.NativeService) {
 }
 
 func ParamInit(native *native.NativeService) ([]byte, error) {
-	fmt.Println("===ParamInit")
 	contract := native.ContextRef.CurrentContext().ContractAddress
-	fmt.Printf("===ParamInit contract is :%v\n", contract[:])
 
 	storageAdmin, _ := GetStorageRole(native, generateAdminKey(contract, false))
 	storageOperator, _ := GetStorageRole(native, generateAdminKey(contract, false))
@@ -70,13 +68,10 @@ func ParamInit(native *native.NativeService) ([]byte, error) {
 	}
 
 	initParams := Params{}
-	fmt.Printf("native.input is %v\n", native.Input)
-	args, err := serialization.ReadVarBytes(bytes.NewBuffer(native.Input))
+	_, err := serialization.ReadVarBytes(bytes.NewBuffer(native.Input))
 	if err != nil {
-		fmt.Println("err:" + err.Error())
 		return utils.BYTE_FALSE, errors.NewDetailErr(err, errors.ErrNoCode, "init param, read native input failed!")
 	}
-	fmt.Printf("===ParamInit args:%v\n", args)
 
 	//argsBuffer := bytes.NewBuffer(args)
 	argsBuffer := bytes.NewBuffer(native.Input)
@@ -85,7 +80,6 @@ func ParamInit(native *native.NativeService) ([]byte, error) {
 	}
 	native.CacheDB.Put(generateParamKey(contract, CURRENT_VALUE), getParamStorageItem(initParams).ToArray())
 	native.CacheDB.Put(generateParamKey(contract, PREPARE_VALUE), getParamStorageItem(initParams).ToArray())
-	fmt.Println("===ParamInit 3")
 
 	var admin common.Address
 	if admin, err = utils.ReadAddress(argsBuffer); err != nil {
@@ -94,7 +88,6 @@ func ParamInit(native *native.NativeService) ([]byte, error) {
 	native.CacheDB.Put(generateAdminKey(contract, false), getRoleStorageItem(admin).ToArray())
 	operator := admin
 	native.CacheDB.Put(GenerateOperatorKey(contract), getRoleStorageItem(operator).ToArray())
-	fmt.Println("===ParamInit 4")
 
 	return utils.BYTE_TRUE, nil
 }
@@ -162,7 +155,6 @@ func SetOperator(native *native.NativeService) ([]byte, error) {
 }
 
 func SetGlobalParam(native *native.NativeService) ([]byte, error) {
-	fmt.Println("======SetGlobalParam=======")
 	contract := native.ContextRef.CurrentContext().ContractAddress
 	operator, err := GetStorageRole(native, GenerateOperatorKey(contract))
 	if err != nil || operator == common.ADDRESS_EMPTY {
