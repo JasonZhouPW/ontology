@@ -20,7 +20,6 @@ package ledgerstore
 
 import (
 	"bytes"
-	"encoding/json"
 	"fmt"
 	"math"
 	"os"
@@ -870,9 +869,13 @@ func (this *LedgerStoreImp) PreExecuteContract(tx *types.Transaction) (*sstate.P
 		txStruct := &cutils.TxStruct{}
 		//fmt.Printf("==invoke.Code:%s\n", invoke.Code)
 
-		errs := json.Unmarshal(invoke.Code, txStruct)
-		if errs != nil {
-			return nil, errs
+		//errs := json.Unmarshal(invoke.Code, txStruct)
+		//if errs != nil {
+		//	return nil, errs
+		//}
+		err := txStruct.Deserialize(invoke.Code)
+		if err != nil {
+			return nil, err
 		}
 
 		sc := smartcontract.SmartContract{

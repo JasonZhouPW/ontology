@@ -136,7 +136,6 @@ var AssetCommand = cli.Command{
 }
 
 func transfer(ctx *cli.Context) error {
-	fmt.Println("==cmd transfer===")
 	SetRpcPort(ctx)
 	if !ctx.IsSet(utils.GetFlagName(utils.TransactionToFlag)) ||
 		!ctx.IsSet(utils.GetFlagName(utils.TransactionFromFlag)) ||

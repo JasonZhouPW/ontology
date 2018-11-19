@@ -24,7 +24,6 @@ import (
 	"math"
 	"strconv"
 
-	"encoding/json"
 	"github.com/ontio/ontology/common"
 	"github.com/ontio/ontology/common/config"
 	"github.com/ontio/ontology/common/log"
@@ -133,10 +132,16 @@ func (self *StateStore) HandleInvokeTransaction(store store.LedgerStore, overlay
 
 	isCharge := !sysTransFlag && tx.GasPrice != 0
 	txStruct := &utils2.TxStruct{}
-	errs := json.Unmarshal(code, txStruct)
+	//errs := json.Unmarshal(code, txStruct)
+	//if errs != nil {
+	//	return errs
+	//}
+
+	errs := txStruct.Deserialize(code)
 	if errs != nil {
 		return errs
 	}
+
 	cache := storage.NewCacheDB(overlay)
 	// init smart contract configuration info
 	config := &smartcontract.Config{

@@ -22,7 +22,6 @@ package common
 import (
 	"bytes"
 	"encoding/hex"
-	"encoding/json"
 	"github.com/ontio/ontology-crypto/keypair"
 	"github.com/ontio/ontology/common"
 	"github.com/ontio/ontology/common/constants"
@@ -534,11 +533,14 @@ func BuildNativeInvokeCode(contractAddress common.Address, version byte, method 
 	}
 
 	//todo replace with serialize method
-	bs, err := json.Marshal(txstruct)
+	//bs, err := json.Marshal(txstruct)
+	//if err != nil {
+	//	return nil, err
+	//}
+	bs, err := txstruct.Serialize()
 	if err != nil {
 		return nil, err
 	}
-
 	return bs, nil
 
 	//return cutils.BuildWasmNativeTransaction(contractAddress, int(version),method,bf.Bytes()),nil

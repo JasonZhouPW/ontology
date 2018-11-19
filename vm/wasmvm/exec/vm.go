@@ -557,10 +557,10 @@ func (vm *VM) loadModule(module *wasm.Module) error {
 		}
 
 		size := uint(module.Memory.Entries[0].Limits.Initial)
-		if size > uint(MAX_PAGE_GROWTH){
+		if size > uint(MAX_PAGE_GROWTH) {
 			return errors.New("[loadModule]memory size is to large")
 		}
-		vm.memory.Memory = make([]byte, size * wasmPageSize)
+		vm.memory.Memory = make([]byte, size*wasmPageSize)
 		copy(vm.memory.Memory, module.LinearMemoryIndexSpace[0])
 	} else if len(module.LinearMemoryIndexSpace) > 0 {
 		//add imported memory ,all mem access will be on the imported mem

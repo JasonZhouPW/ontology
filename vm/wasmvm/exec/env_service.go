@@ -28,6 +28,7 @@ import (
 	"strconv"
 	"strings"
 
+	"fmt"
 	"github.com/ontio/ontology/common/serialization"
 	"github.com/ontio/ontology/vm/wasmvm/memory"
 	"github.com/ontio/ontology/vm/wasmvm/util"
@@ -318,7 +319,7 @@ func readInt32Param(engine *ExecutionEngine) (bool, error) {
 
 //read int64 value from args bytes
 func readInt64Param(engine *ExecutionEngine) (bool, error) {
-
+	fmt.Println("===readInt64Param===")
 	envCall := engine.vm.envCall
 	params := envCall.envParams
 	if len(params) != 1 {
