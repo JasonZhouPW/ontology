@@ -21,14 +21,10 @@ package utils
 import (
 	"bytes"
 	"math"
-	"math/big"
-
 	"github.com/ontio/ontology/common"
 	"github.com/ontio/ontology/common/serialization"
 	"github.com/ontio/ontology/core/payload"
 	"github.com/ontio/ontology/core/types"
-	"github.com/ontio/ontology/smartcontract/service/neovm"
-	vm "github.com/ontio/ontology/vm/neovm"
 )
 
 type TxStruct struct {
@@ -121,22 +117,6 @@ func NewInvokeTransaction(code []byte) *types.MutableTransaction {
 	}
 }
 
-func BuildNativeTransaction(addr common.Address, initMethod string, args []byte) *types.MutableTransaction {
-	bf := new(bytes.Buffer)
-	builder := vm.NewParamsBuilder(bf)
-	builder.EmitPushByteArray(args)
-	builder.EmitPushByteArray([]byte(initMethod))
-	builder.EmitPushByteArray(addr[:])
-	builder.EmitPushInteger(big.NewInt(0))
-	builder.Emit(vm.SYSCALL)
-	builder.EmitPushByteArray([]byte(neovm.NATIVE_INVOKE_NAME))
-
-	tx := NewInvokeTransaction(builder.ToArray())
-	tx.GasLimit = math.MaxUint64
-
-	return tx
-}
-
 //add for wasm vm native transaction call
 func BuildWasmNativeTransaction(addr common.Address, version int, initMethod string, args []byte) *types.MutableTransaction {
 	txstruct := TxStruct{
@@ -145,13 +125,6 @@ func BuildWasmNativeTransaction(addr common.Address, version int, initMethod str
 		Version: version,
 		Args:    args,
 	}
-
-	//todo replace with serialize method
-	//bs, err := json.Marshal(txstruct)
-	//if err != nil {
-	//	return nil
-	//}
-
 	bs, err := txstruct.Serialize()
 	if err != nil {
 		return nil

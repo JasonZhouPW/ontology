@@ -50,9 +50,7 @@ func RegisterOngContract(native *native.NativeService) {
 
 func OngInit(native *native.NativeService) ([]byte, error) {
 	contract := native.ContextRef.CurrentContext().ContractAddress
-
 	amount, err := utils.GetStorageUInt64(native, ont.GenTotalSupplyKey(contract))
-
 	if err != nil {
 		return utils.BYTE_FALSE, err
 	}
@@ -65,7 +63,6 @@ func OngInit(native *native.NativeService) ([]byte, error) {
 	native.CacheDB.Put(ont.GenTotalSupplyKey(contract), item.ToArray())
 	native.CacheDB.Put(append(contract[:], utils.OntContractAddress[:]...), item.ToArray())
 	ont.AddNotifications(native, contract, &ont.State{To: utils.OntContractAddress, Value: constants.ONG_TOTAL_SUPPLY})
-
 	return utils.BYTE_TRUE, nil
 }
 

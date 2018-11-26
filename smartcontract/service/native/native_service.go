@@ -20,6 +20,7 @@ package native
 
 import (
 	"fmt"
+
 	"github.com/ontio/ontology/common"
 	"github.com/ontio/ontology/core/types"
 	"github.com/ontio/ontology/errors"
@@ -50,7 +51,7 @@ type NativeService struct {
 	Tx            *types.Transaction
 	Height        uint32
 	Time          uint32
-	RandomHash    common.Uint256
+	BlockHash     common.Uint256
 	ContextRef    context.ContextRef
 }
 
@@ -60,9 +61,7 @@ func (this *NativeService) Register(methodName string, handler Handler) {
 
 func (this *NativeService) Invoke() (interface{}, error) {
 	contract := this.InvokeParam
-
 	services, ok := Contracts[contract.Address]
-
 	if !ok {
 		return false, fmt.Errorf("Native contract address %x haven't been registered.", contract.Address)
 	}
@@ -72,13 +71,11 @@ func (this *NativeService) Invoke() (interface{}, error) {
 		return false, fmt.Errorf("Native contract %x doesn't support this function %s.",
 			contract.Address, contract.Method)
 	}
-
 	args := this.Input
 	this.Input = contract.Args
 	this.ContextRef.PushContext(&context.Context{ContractAddress: contract.Address})
 	notifications := this.Notifications
 	this.Notifications = []*event.NotifyEventInfo{}
-
 	result, err := service(this)
 	if err != nil {
 		return result, errors.NewDetailErr(err, errors.ErrNoCode, "[Invoke] Native serivce function execute error!")
@@ -87,7 +84,6 @@ func (this *NativeService) Invoke() (interface{}, error) {
 	this.ContextRef.PushNotifications(this.Notifications)
 	this.Notifications = notifications
 	this.Input = args
-
 	return result, nil
 }
 

@@ -57,7 +57,6 @@ func RegisterOntContract(native *native.NativeService) {
 func OntInit(native *native.NativeService) ([]byte, error) {
 	contract := native.ContextRef.CurrentContext().ContractAddress
 	amount, err := utils.GetStorageUInt64(native, GenTotalSupplyKey(contract))
-
 	if err != nil {
 		return utils.BYTE_FALSE, err
 	}
@@ -67,21 +66,7 @@ func OntInit(native *native.NativeService) ([]byte, error) {
 	}
 
 	distribute := make(map[common.Address]uint64)
-	/*source := common.NewZeroCopySource(native.Input)
-	buf, _, irregular, eof := source.NextVarBytes()
-	if eof {
-		return utils.BYTE_FALSE, errors.NewDetailErr(err, errors.ErrNoCode, "serialization.ReadVarBytes, contract params deserialize error!")
-	}
-	if irregular {
-		return utils.BYTE_FALSE, common.ErrIrregularData
-	}
-	fmt.Println("===OntInit 4")
-	fmt.Printf("buf is %v\n",buf)
-	input := common.NewZeroCopySource(buf)
-	num, err := utils.DecodeVarUint(input)
-	if err != nil {
-		return utils.BYTE_FALSE, fmt.Errorf("read number error:%v", err)
-	}*/
+
 	sum := uint64(0)
 	overflow := false
 
@@ -91,12 +76,10 @@ func OntInit(native *native.NativeService) ([]byte, error) {
 	input := source
 
 	for i := uint64(0); i < num; i++ {
-		//addr, err := utils.DecodeAddress(input)
 		addr, err := utils.ReadAddress(input)
 		if err != nil {
 			return utils.BYTE_FALSE, fmt.Errorf("read address error:%v", err)
 		}
-		//value, err := utils.DecodeVarUint(input)
 		value, err := utils.ReadVarUint(input)
 		if err != nil {
 			return utils.BYTE_FALSE, fmt.Errorf("read value error:%v", err)
@@ -107,7 +90,6 @@ func OntInit(native *native.NativeService) ([]byte, error) {
 		}
 		distribute[addr] += value
 	}
-
 	if sum != constants.ONT_TOTAL_SUPPLY {
 		return utils.BYTE_FALSE, fmt.Errorf("wrong config. total supply %d != %d", sum, constants.ONT_TOTAL_SUPPLY)
 	}
@@ -129,7 +111,6 @@ func OntTransfer(native *native.NativeService) ([]byte, error) {
 	if err := transfers.Deserialization(source); err != nil {
 		return utils.BYTE_FALSE, errors.NewDetailErr(err, errors.ErrNoCode, "[Transfer] Transfers deserialize error!")
 	}
-
 	contract := native.ContextRef.CurrentContext().ContractAddress
 	for _, v := range transfers.States {
 		if v.Value == 0 {

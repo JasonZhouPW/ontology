@@ -51,7 +51,6 @@ import (
 //HandleDeployTransaction deal with smart contract deploy transaction
 func (self *StateStore) HandleDeployTransaction(store store.LedgerStore, overlay *overlaydb.OverlayDB,
 	tx *types.Transaction, block *types.Block, notify *event.ExecuteNotify) error {
-
 	deploy := tx.Payload.(*payload.DeployCode)
 	var (
 		notifies    []*event.NotifyEventInfo
@@ -60,13 +59,13 @@ func (self *StateStore) HandleDeployTransaction(store store.LedgerStore, overlay
 	)
 
 	cache := storage.NewCacheDB(overlay)
-
 	if tx.GasPrice != 0 {
+		// init smart contract configuration info
 		config := &smartcontract.Config{
-			Time:       block.Header.Timestamp,
-			Height:     block.Header.Height,
-			Tx:         tx,
-			RandomHash: block.Hash(),
+			Time:      block.Header.Timestamp,
+			Height:    block.Header.Height,
+			Tx:        tx,
+			BlockHash: block.Hash(),
 		}
 		createGasPrice, ok := exec.GAS_TABLE.Load(exec.CONTRACT_CREATE_NAME)
 		if !ok {
@@ -88,7 +87,6 @@ func (self *StateStore) HandleDeployTransaction(store store.LedgerStore, overlay
 			}
 			return err
 		}
-
 		if tx.GasLimit < gasLimit {
 			if err := costInvalidGas(tx.Payer, tx.GasLimit*tx.GasPrice, config, overlay, store, notify); err != nil {
 				return err
@@ -97,7 +95,6 @@ func (self *StateStore) HandleDeployTransaction(store store.LedgerStore, overlay
 
 		}
 		gasConsumed = gasLimit * tx.GasPrice
-
 		notifies, err = chargeCostGas(tx.Payer, gasConsumed, config, cache, store)
 		if err != nil {
 			return err
@@ -132,10 +129,6 @@ func (self *StateStore) HandleInvokeTransaction(store store.LedgerStore, overlay
 
 	isCharge := !sysTransFlag && tx.GasPrice != 0
 	txStruct := &utils2.TxStruct{}
-	//errs := json.Unmarshal(code, txStruct)
-	//if errs != nil {
-	//	return errs
-	//}
 
 	errs := txStruct.Deserialize(code)
 	if errs != nil {
@@ -145,11 +138,12 @@ func (self *StateStore) HandleInvokeTransaction(store store.LedgerStore, overlay
 	cache := storage.NewCacheDB(overlay)
 	// init smart contract configuration info
 	config := &smartcontract.Config{
-		Time:       block.Header.Timestamp,
-		Height:     block.Header.Height,
-		Tx:         tx,
-		RandomHash: block.Hash(),
+		Time:      block.Header.Timestamp,
+		Height:    block.Header.Height,
+		Tx:        tx,
+		BlockHash: block.Hash(),
 	}
+
 	var (
 		costGasLimit      uint64
 		costGas           uint64
@@ -162,7 +156,6 @@ func (self *StateStore) HandleInvokeTransaction(store store.LedgerStore, overlay
 	)
 	//cache := storage.NewCacheDB(overlay)
 	availableGasLimit = tx.GasLimit
-
 	if isCharge {
 		uintCodeGasPrice, ok := exec.GAS_TABLE.Load(exec.UINT_INVOKE_CODE_LEN_NAME)
 		if !ok {
@@ -204,9 +197,9 @@ func (self *StateStore) HandleInvokeTransaction(store store.LedgerStore, overlay
 		if availableGasLimit > maxAvaGasLimit {
 			availableGasLimit = maxAvaGasLimit
 		}
-
 	}
 
+	//init smart contract info
 	sc := smartcontract.SmartContract{
 		Config:  config,
 		CacheDB: cache,

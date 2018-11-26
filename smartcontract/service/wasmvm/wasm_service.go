@@ -46,7 +46,7 @@ type WasmVmService struct {
 	Tx            *types.Transaction
 	Time          uint32
 	Height        uint32
-	RandomHash    common.Uint256
+	BlockHash    common.Uint256
 	Gas           *uint64
 }
 

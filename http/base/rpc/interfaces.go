@@ -21,7 +21,6 @@ package rpc
 import (
 	"bytes"
 	"encoding/hex"
-	"fmt"
 	"github.com/ontio/ontology/common"
 	"github.com/ontio/ontology/common/config"
 	"github.com/ontio/ontology/common/log"
@@ -266,7 +265,6 @@ func SendRawTransaction(params []interface{}) map[string]interface{} {
 	if len(params) < 1 {
 		return responsePack(berr.INVALID_PARAMS, nil)
 	}
-
 	var hash common.Uint256
 	switch params[0].(type) {
 	case string:
@@ -280,14 +278,14 @@ func SendRawTransaction(params []interface{}) map[string]interface{} {
 			return responsePack(berr.INVALID_TRANSACTION, "")
 		}
 		hash = txn.Hash()
-
+		log.Debugf("SendRawTransaction recv %s", hash.ToHexString())
 		if txn.TxType == types.Invoke || txn.TxType == types.Deploy {
 			if len(params) > 1 {
 				preExec, ok := params[1].(float64)
 				if ok && preExec == 1 {
-
 					result, err := bactor.PreExecuteContract(txn)
 					if err != nil {
+						log.Infof("PreExec: ", err)
 						return responsePack(berr.SMARTCODE_ERROR, err.Error())
 					}
 					return responseSuccess(result)
@@ -295,6 +293,7 @@ func SendRawTransaction(params []interface{}) map[string]interface{} {
 			}
 		}
 
+		log.Debugf("SendRawTransaction send to txpool %s", hash.ToHexString())
 		if errCode, desc := bcomn.SendTxToPool(txn); errCode != ontErrors.ErrNoError {
 			log.Warnf("SendRawTransaction verified %s error: %s", hash.ToHexString(), desc)
 			return responsePack(int64(errCode), desc)
@@ -428,7 +427,6 @@ func GetBlockHeightByTxHash(params []interface{}) map[string]interface{} {
 
 //get balance of address
 func GetBalance(params []interface{}) map[string]interface{} {
-	fmt.Printf("===rpc server GetBalance params:%v\n", params)
 	if len(params) < 1 {
 		return responsePack(berr.INVALID_PARAMS, "")
 	}

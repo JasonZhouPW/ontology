@@ -647,22 +647,6 @@ func PrepareDeployContract(
 	return PrepareSendRawTransaction(txData)
 }
 
-//func InvokeNativeContract(
-//	gasPrice,
-//	gasLimit uint64,
-//	signer *account.Account,
-//	contractAddress common.Address,
-//	version byte,
-//	method string,
-//	params []interface{},
-//) (string, error) {
-//	tx, err := httpcom.NewNativeInvokeTransaction(gasPrice, gasLimit, contractAddress, version, method, params)
-//	if err != nil {
-//		return "", err
-//	}
-//	return InvokeSmartContract(signer, tx)
-//}
-
 //Invoke wasm smart contract
 //methodName is wasm contract action name
 //paramType  is Json or Raw format
@@ -760,27 +744,6 @@ func PrepareInvokeCodeNeoVMContract(code []byte) (*cstates.PreExecResult, error)
 	return PrepareSendRawTransaction(txData)
 }
 
-//func PrepareInvokeNativeContract(
-//	contractAddress common.Address,
-//	version byte,
-//	method string,
-//	params []interface{}) (*cstates.PreExecResult, error) {
-//	mutable, err := httpcom.NewNativeInvokeTransaction(0, 0, contractAddress, version, method, params)
-//	if err != nil {
-//		return nil, err
-//	}
-//	tx, err := mutable.IntoImmutable()
-//	if err != nil {
-//		return nil, err
-//	}
-//	var buffer bytes.Buffer
-//	err = tx.Serialize(&buffer)
-//	if err != nil {
-//		return nil, fmt.Errorf("tx serialize error:%s", err)
-//	}
-//	txData := hex.EncodeToString(buffer.Bytes())
-//	return PrepareSendRawTransaction(txData)
-//}
 
 //NewDeployCodeTransaction return a smart contract deploy transaction instance
 func NewDeployCodeTransaction(gasPrice, gasLimit uint64, code []byte, needStorage bool,

@@ -24,7 +24,6 @@ import (
 	"reflect"
 	"sort"
 
-	"fmt"
 	"github.com/ontio/ontology-crypto/keypair"
 	"github.com/ontio/ontology/common"
 	"github.com/ontio/ontology/common/serialization"
@@ -70,6 +69,7 @@ func RuntimeCheckWitness(service *NeoVmService, engine *vm.ExecutionEngine) erro
 
 func RuntimeSerialize(service *NeoVmService, engine *vm.ExecutionEngine) error {
 	item := vm.PopStackItem(engine)
+
 	buf, err := SerializeStackItem(item)
 	if err != nil {
 		return err
@@ -114,10 +114,6 @@ func RuntimeLog(service *NeoVmService, engine *vm.ExecutionEngine) error {
 	if err != nil {
 		return err
 	}
-	fmt.Println("===RuntimeLog===")
-	fmt.Println(item)
-	fmt.Printf("%s\n", item)
-
 	context := service.ContextRef.CurrentContext()
 	txHash := service.Tx.Hash()
 	event.PushSmartCodeEvent(txHash, 0, event.EVENT_LOG, &event.LogEventArgs{TxHash: txHash, ContractAddress: context.ContractAddress, Message: string(item)})
@@ -161,8 +157,8 @@ func RuntimeAddressToBase58(service *NeoVmService, engine *vm.ExecutionEngine) e
 	return nil
 }
 
-func RuntimeGetRandomHash(service *NeoVmService, engine *vm.ExecutionEngine) error {
-	vm.PushData(engine, service.RandomHash.ToArray())
+func RuntimeGetCurrentBlockHash(service *NeoVmService, engine *vm.ExecutionEngine) error {
+	vm.PushData(engine, service.BlockHash.ToArray())
 	return nil
 }
 

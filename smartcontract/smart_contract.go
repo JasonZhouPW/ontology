@@ -49,10 +49,10 @@ type SmartContract struct {
 
 // Config describe smart contract need parameters configuration
 type Config struct {
-	Time       uint32              // current block timestamp
-	Height     uint32              // current block height
-	RandomHash common.Uint256      // current block hash
-	Tx         *ctypes.Transaction // current transaction
+	Time      uint32              // current block timestamp
+	Height    uint32              // current block height
+	BlockHash common.Uint256      // current block hash
+	Tx        *ctypes.Transaction // current transaction
 }
 
 // PushContext push current context to smart contract
@@ -126,21 +126,6 @@ func (this *SmartContract) NewExecuteEngine(code []byte) (context.Engine, error)
 		return nil, fmt.Errorf("%s", "engine over max limit!")
 	}
 
-	//service := &neovm.NeoVmService{
-	//	Store:      this.Store,
-	//	CacheDB:    this.CacheDB,
-
-	//todo replace with wasm_service
-	//service := &neovm.NeoVmService{
-	//	Store:      this.Store,
-	//	CloneCache: this.CloneCache,
-	//	ContextRef: this,
-	//	Code:       code,
-	//	Tx:         this.Config.Tx,
-	//	Time:       this.Config.Time,
-	//	Height:     this.Config.Height,
-	//	Engine:     vm.NewExecutionEngine(),
-	//}
 	service := &wasmvm.WasmVmService{
 		Store:      this.Store,
 		CacheDB:    this.CacheDB,
@@ -149,11 +134,8 @@ func (this *SmartContract) NewExecuteEngine(code []byte) (context.Engine, error)
 		Tx:         this.Config.Tx,
 		Time:       this.Config.Time,
 		Height:     this.Config.Height,
-		RandomHash: this.Config.RandomHash,
+		BlockHash: this.Config.BlockHash,
 		Gas:        &this.Gas,
-		//Engine:     vm.NewExecutionEngine(),
-		//Engine:     exec.NewExecutionEngine(),
-
 	}
 	return service, nil
 }
@@ -168,7 +150,7 @@ func (this *SmartContract) NewNativeService() (*native.NativeService, error) {
 		Tx:         this.Config.Tx,
 		Time:       this.Config.Time,
 		Height:     this.Config.Height,
-		RandomHash: this.Config.RandomHash,
+		BlockHash:  this.Config.BlockHash,
 		ServiceMap: make(map[string]native.Handler),
 	}
 	return service, nil

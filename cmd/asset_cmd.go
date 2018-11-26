@@ -235,7 +235,6 @@ func getBalance(ctx *cli.Context) error {
 	if err != nil {
 		return err
 	}
-
 	balance, err := utils.GetBalance(accAddr)
 	if err != nil {
 		return err
