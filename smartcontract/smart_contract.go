@@ -134,7 +134,7 @@ func (this *SmartContract) NewExecuteEngine(code []byte) (context.Engine, error)
 		Tx:         this.Config.Tx,
 		Time:       this.Config.Time,
 		Height:     this.Config.Height,
-		BlockHash: this.Config.BlockHash,
+		BlockHash:  this.Config.BlockHash,
 		Gas:        &this.Gas,
 	}
 	return service, nil

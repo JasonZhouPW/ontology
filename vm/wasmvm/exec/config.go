@@ -36,6 +36,13 @@ var (
 	RUNTIME_GETTIME_NAME        = "ONT_Runtime_GetTime"
 	RUNTIME_LOG_NAME            = "ONT_Runtime_Log"
 	RUNTIME_RAISEEXCEPTION_NAME = "ONT_Runtime_RaiseException"
+	RUNTIME_GETCURRENTBLOCKHASH = "ONT_Runtime_GetCurrentBlockHash"
+	RUNTIME_GETCODECONTAINER    = "ONT_Runtime_GetCodeContainer"
+	RUNTIME_GETEXECUTINGADDRESS = "ONT_Runtime_GetExecutingAddress"
+	RUNTIME_GETCALLINGADDRESS   = "ONT_Runtime_GetCallingAddress"
+	RUNTIME_GETENTRYADDRESS     = "ONT_Runtime_GetEntryAddress"
+	RUNTIME_ADDRESSTOBASE58     = "ONT_Runtime_AddressToBase58"
+	RUNTIME_ADDRESSTOHEX        = "ONT_Runtime_AddressToHex"
 
 	//BLOCKCHAIN_GETHEADER_NAME      = ""
 	//BLOCKCHAIN_GETBLOCK_NAME	   = ""

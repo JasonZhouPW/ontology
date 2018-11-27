@@ -744,7 +744,6 @@ func PrepareInvokeCodeNeoVMContract(code []byte) (*cstates.PreExecResult, error)
 	return PrepareSendRawTransaction(txData)
 }
 
-
 //NewDeployCodeTransaction return a smart contract deploy transaction instance
 func NewDeployCodeTransaction(gasPrice, gasLimit uint64, code []byte, needStorage bool,
 	cname, cversion, cauthor, cemail, cdesc string) *types.MutableTransaction {

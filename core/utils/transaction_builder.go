@@ -20,11 +20,11 @@ package utils
 
 import (
 	"bytes"
-	"math"
 	"github.com/ontio/ontology/common"
 	"github.com/ontio/ontology/common/serialization"
 	"github.com/ontio/ontology/core/payload"
 	"github.com/ontio/ontology/core/types"
+	"math"
 )
 
 type TxStruct struct {

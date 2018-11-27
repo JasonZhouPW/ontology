@@ -46,7 +46,7 @@ type WasmVmService struct {
 	Tx            *types.Transaction
 	Time          uint32
 	Height        uint32
-	BlockHash    common.Uint256
+	BlockHash     common.Uint256
 	Gas           *uint64
 }
 
@@ -80,6 +80,14 @@ func (this *WasmVmService) Invoke() (interface{}, error) {
 	stateMachine.Register(exec.RUNTIME_GETTIME_NAME, this.runtimeGetTime)
 	stateMachine.Register(exec.RUNTIME_LOG_NAME, this.runtimeLog)
 	stateMachine.Register(exec.RUNTIME_RAISEEXCEPTION_NAME, this.runtimeRaiseException)
+	stateMachine.Register(exec.RUNTIME_GETCURRENTBLOCKHASH, this.runtimeGetCurrentBlockHash)
+	stateMachine.Register(exec.RUNTIME_GETCODECONTAINER, this.runtimeGetCodeContainer)
+	stateMachine.Register(exec.RUNTIME_GETEXECUTINGADDRESS, this.runtimeGetExecutingAddress)
+	stateMachine.Register(exec.RUNTIME_GETCALLINGADDRESS, this.runtimeGetCallingAddress)
+	stateMachine.Register(exec.RUNTIME_GETENTRYADDRESS, this.runtimeGetEntryAddress)
+	stateMachine.Register(exec.RUNTIME_ADDRESSTOBASE58, this.runtimeAddressToBase58)
+	stateMachine.Register(exec.RUNTIME_ADDRESSTOHEX, this.runtimeAddressToHex)
+
 	//attribute
 	stateMachine.Register(exec.ATTRIBUTE_GETUSAGE_NAME, this.attributeGetUsage)
 	stateMachine.Register(exec.ATTRIBUTE_GETDATA_NAME, this.attributeGetData)
@@ -148,7 +156,7 @@ func (this *WasmVmService) Invoke() (interface{}, error) {
 	} else {
 		caller = this.ContextRef.CallingContext().ContractAddress
 	}
-	this.ContextRef.PushContext(&context.Context{ContractAddress: contract.Address})
+	//this.ContextRef.PushContext(&context.Context{ContractAddress: contract.Address})
 
 	res, err := engine.Call(caller, code.Code, contract.Method, contract.Args, contract.Version)
 
