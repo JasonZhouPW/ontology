@@ -20,6 +20,7 @@ package neovm
 
 import (
 	"github.com/ontio/ontology/vm/neovm/errors"
+	errors2 "github.com/syndtr/goleveldb/leveldb/errors"
 )
 
 func opNop(e *ExecutionEngine) (VMState, error) {
@@ -70,5 +71,27 @@ func opCall(e *ExecutionEngine) (VMState, error) {
 
 func opRet(e *ExecutionEngine) (VMState, error) {
 	e.PopContext()
+	return NONE, nil
+}
+
+func opDJMP(e *ExecutionEngine)(VMState, error) {
+	context := e.Context.Clone()
+	e.Context.SetInstructionPointer(int64(e.Context.GetInstructionPointer() + 2))
+	e.PushContext(context)
+
+	dest ,err:= PopBigInt(e)
+	if err != nil{
+		return FAULT, errors2.New("[opDJMP] Not a supported type")
+	}
+	offset := dest.Int64()
+
+	offset = int64(e.Context.GetInstructionPointer()) + offset - 3
+
+	if offset < 0 || int(offset) > len(e.Context.Code) {
+		return FAULT, errors.ERR_FAULT
+	}
+
+	e.Context.SetInstructionPointer(int64(offset))
+
 	return NONE, nil
 }
