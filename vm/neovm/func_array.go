@@ -129,14 +129,14 @@ func opSetItem(e *ExecutionEngine) (VMState, error) {
 		bi, _ := index.GetBigInteger()
 		i := int(bi.Int64())
 
-		value,err := item.GetBigInteger()
-		if err != nil{
-			return FAULT,errors.NewErr("Not a byte in SetItem")
+		value, err := item.GetBigInteger()
+		if err != nil {
+			return FAULT, errors.NewErr("Not a byte in SetItem")
 		}
 
 		b := int(value.Int64())
-		if b < 0 || b > 255{
-			return FAULT,errors.NewErr("Not a byte in SetItem")
+		if b < 0 || b > 255 {
+			return FAULT, errors.NewErr("Not a byte in SetItem")
 		}
 		items[i] = byte(b)
 	}
@@ -199,8 +199,26 @@ func opReverse(e *ExecutionEngine) (VMState, error) {
 func opRemove(e *ExecutionEngine) (VMState, error) {
 	index := PopStackItem(e)
 	item := PopStackItem(e)
-	m := item.(*types.Map)
-	m.Remove(index)
+
+	switch item.(type) {
+	case *types.Map:
+		m := item.(*types.Map)
+		m.Remove(index)
+	case *types.Array:
+		m, err := item.GetArray()
+		if err != nil {
+			return FAULT, errors.NewErr("[opRemove]get Array error!")
+		}
+		atidx := 0
+		for i, obj := range m {
+			if index.Equals(obj) {
+				atidx = i
+				break
+			}
+		}
+		item.(*types.Array).RemoveAt(atidx)
+	}
+
 	return NONE, nil
 }
 
