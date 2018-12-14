@@ -886,6 +886,7 @@ func (this *LedgerStoreImp) PreExecuteContract(tx *types.Transaction) (*sstate.P
 
 			native, err := sc.NewNativeService()
 			native.InvokeParam = contract
+			native.Input = contract.Args
 			if err != nil {
 				return nil, err
 			}
