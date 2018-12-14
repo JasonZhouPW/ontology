@@ -57,7 +57,7 @@ const (
 	CONTRACT_TRANSFER_FROM = "transferFrom"
 	CONTRACT_APPROVE       = "approve"
 
-	ASSET_ONT = "ont"
+	ASSET_ONT  = "ont"
 	ASSET_ONGX = "ongx"
 )
 

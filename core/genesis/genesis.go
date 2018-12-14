@@ -54,6 +54,11 @@ var INIT_PARAM = map[string]string{
 	"gasPrice": "0",
 }
 
+type GParam struct {
+	Param     *global_params.Params
+	AdminAddr common.Address
+}
+
 var GenesisBookkeepers []keypair.PublicKey
 
 // BuildGenesisBlock returns the genesis block with default consensus bookkeeper list
@@ -163,7 +168,10 @@ func deployOntIDContract() *types.Transaction {
 }
 
 func newParamInit() *types.Transaction {
+
+	gParam := new(GParam)
 	params := new(global_params.Params)
+
 	var s []string
 	for k := range INIT_PARAM {
 		s = append(s, k)
@@ -178,11 +186,10 @@ func newParamInit() *types.Transaction {
 	for _, v := range s {
 		params.SetParam(global_params.Param{Key: v, Value: INIT_PARAM[v]})
 	}
-	//bf := new(bytes.Buffer)
-	//params.Serialize(bf)
-	//nutils.WriteAddress(bf, genAdminAddress())
 
-	mutable := utils.BuildWasmNativeTransaction(nutils.ParamContractAddress, 0, global_params.INIT_NAME, params)
+	gParam.Param = params
+	gParam.AdminAddr = genAdminAddress()
+	mutable := utils.BuildWasmNativeTransaction(nutils.ParamContractAddress, 0, global_params.INIT_NAME, gParam)
 	tx, err := mutable.IntoImmutable()
 	if err != nil {
 		panic("constract genesis governing token transaction error ")
