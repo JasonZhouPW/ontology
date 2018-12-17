@@ -39,7 +39,7 @@ import (
 )
 
 const (
-	BlockVersion uint32 = 0
+	BlockVersion uint32 = 1
 	GenesisNonce uint64 = 2083236893
 )
 
@@ -171,7 +171,6 @@ func newParamInit() *types.Transaction {
 
 	gParam := new(GParam)
 	params := new(global_params.Params)
-
 	var s []string
 	for k := range INIT_PARAM {
 		s = append(s, k)
@@ -195,7 +194,6 @@ func newParamInit() *types.Transaction {
 		panic("constract genesis governing token transaction error ")
 	}
 	return tx
-
 }
 
 func genAdminAddress() common.Address {

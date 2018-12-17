@@ -35,6 +35,7 @@ import (
 )
 
 const MAX_TX_SIZE = 1024 * 1024 // The max size of a transaction to prevent DOS attacks
+const TX_VERSION = byte(1)
 
 type Transaction struct {
 	SideChainID string

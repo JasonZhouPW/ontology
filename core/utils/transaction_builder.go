@@ -30,6 +30,7 @@ import (
 	"github.com/ontio/ontology/smartcontract/service/native/utils"
 	"math"
 	"reflect"
+	"github.com/ontio/ontology/errors"
 )
 
 type TxStruct struct {
@@ -164,6 +165,21 @@ func BuildNativeInvokeCode(contractAddress common.Address, version byte, method 
 	return bs, nil
 }
 
+//add for wasm vm invoke code
+func BuildWasmInvokeCode(contractAddress common.Address,params []interface{})([]byte,error) {
+	bf := bytes.NewBuffer(nil)
+	if len(params) < 1 {
+		return nil, errors.NewErr("params count error")
+	}
+
+	//method := params[0].(string)
+
+
+
+
+	return bf.Bytes(), nil
+}
+
 func buildParam(params []interface{}, bf *bytes.Buffer) error {
 
 	for _, p := range params {
@@ -236,3 +252,4 @@ func buildParam(params []interface{}, bf *bytes.Buffer) error {
 
 	return nil
 }
+
