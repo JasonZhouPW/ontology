@@ -25,17 +25,19 @@ import (
 
 	"github.com/ontio/ontology/common"
 	"github.com/ontio/ontology/common/serialization"
+	"github.com/ontio/ontology/common/config"
 	"github.com/ontio/ontology/core/payload"
 )
 
 type MutableTransaction struct {
-	Version  byte
-	TxType   TransactionType
-	Nonce    uint32
-	GasPrice uint64
-	GasLimit uint64
-	Payer    common.Address
-	Payload  Payload
+	SideChainID string
+	Version     byte
+	TxType      TransactionType
+	Nonce       uint32
+	GasPrice    uint64
+	GasLimit    uint64
+	Payer       common.Address
+	Payload     Payload
 	//Attributes []*TxAttribute
 	attributes byte //this must be 0 now, Attribute Array length use VarUint encoding, so byte is enough for extension
 	Sigs       []Sig
@@ -98,6 +100,13 @@ func (tx *MutableTransaction) serialize(sink *common.ZeroCopySink) error {
 }
 
 func (tx *MutableTransaction) serializeUnsigned(sink *common.ZeroCopySink) error {
+	if tx.SideChainID != config.DefConfig.Genesis.SideChainID {
+		return errors.New("tx side chain id is not correct")
+	}
+	if tx.Version != TX_VERSION {
+		return errors.New("side chain tx version should equal to 1")
+	}
+	sink.WriteString(tx.SideChainID)
 	sink.WriteByte(byte(tx.Version))
 	sink.WriteByte(byte(tx.TxType))
 	sink.WriteUint32(tx.Nonce)

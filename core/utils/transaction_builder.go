@@ -23,6 +23,7 @@ import (
 	"fmt"
 	"github.com/ontio/ontology/common"
 	"github.com/ontio/ontology/common/serialization"
+	"github.com/ontio/ontology/common/config"
 	"github.com/ontio/ontology/core/payload"
 	"github.com/ontio/ontology/core/types"
 	"github.com/ontio/ontology/smartcontract/service/native/ont"
@@ -103,8 +104,10 @@ func NewDeployTransaction(code []byte, name, version, author, email, desp string
 	}
 
 	return &types.MutableTransaction{
-		TxType:  types.Deploy,
-		Payload: DeployCodePayload,
+		SideChainID: config.DefConfig.Genesis.SideChainID,
+		Version:     types.TX_VERSION,
+		TxType:      types.Deploy,
+		Payload:     DeployCodePayload,
 	}
 }
 
@@ -116,8 +119,10 @@ func NewInvokeTransaction(code []byte) *types.MutableTransaction {
 	}
 
 	return &types.MutableTransaction{
-		TxType:  types.Invoke,
-		Payload: invokeCodePayload,
+		SideChainID: config.DefConfig.Genesis.SideChainID,
+		Version:     types.TX_VERSION,
+		TxType:      types.Invoke,
+		Payload:     invokeCodePayload,
 	}
 }
 
@@ -141,45 +146,6 @@ func BuildWasmNativeTransaction(addr common.Address, version int, initMethod str
 func BuildNativeInvokeCode(contractAddress common.Address, version byte, method string, params []interface{}) ([]byte, error) {
 	bf := bytes.NewBuffer(nil)
 
-	//for _, p := range params {
-	//	switch p.(type) {
-	//	case common.Address:
-	//		utils.WriteAddress(bf, p.(common.Address))
-	//	case uint64:
-	//		utils.WriteVarUint(bf, p.(uint64))
-	//	case []*ont.State:
-	//		utils.WriteVarUint(bf, uint64(len(p.([]*ont.State))))
-	//		for _, s := range p.([]*ont.State) {
-	//			utils.WriteAddress(bf, s.From)
-	//			utils.WriteAddress(bf, s.To)
-	//			utils.WriteVarUint(bf, s.Value)
-	//		}
-	//	case *ont.TransferFrom:
-	//		tmp := p.(*ont.TransferFrom)
-	//		utils.WriteAddress(bf, tmp.Sender)
-	//		utils.WriteAddress(bf, tmp.From)
-	//		utils.WriteAddress(bf, tmp.To)
-	//		utils.WriteVarUint(bf, tmp.Value)
-	//
-	//	case []string:
-	//		utils.WriteVarUint(bf, uint64(len(p.([]string))))
-	//		for _, s := range p.([]string) {
-	//			serialization.WriteVarBytes(bf, []byte(s))
-	//		}
-	//	case string:
-	//		serialization.WriteVarBytes(bf, []byte(p.(string)))
-	//	case []byte:
-	//		serialization.WriteVarBytes(bf, p.([]byte))
-	//	case []interface{}:
-	//		utils.WriteVarUint(bf, uint64(len(p.([]interface{}))))
-	//		for _, s := range p.([]interface{}) {
-	//			serialization.WriteVarBytes(bf, []byte(s.(string)))
-	//		}
-	//
-	//	default:
-	//		log.Errorf("[BuildNativeInvokeCode] unrecongnized params:%v\n", p)
-	//	}
-	//}
 	err := buildParam(params, bf)
 	if err != nil {
 		return nil, err
@@ -230,8 +196,6 @@ func buildParam(params []interface{}, bf *bytes.Buffer) error {
 		case []byte:
 			serialization.WriteVarBytes(bf, p.([]byte))
 		case []interface{}:
-			//utils.WriteVarUint(bf, uint64(len(p.([]interface{}))))
-			//for _, s := range p.([]interface{}) {
 			utils.WriteVarUint(bf, uint64(len(p.([]interface{}))))
 
 			err := buildParam(p.([]interface{}), bf)
