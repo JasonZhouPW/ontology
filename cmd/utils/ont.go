@@ -34,6 +34,7 @@ import (
 	sig "github.com/ontio/ontology-crypto/signature"
 	"github.com/ontio/ontology/account"
 	"github.com/ontio/ontology/common"
+	"github.com/ontio/ontology/common/config"
 	"github.com/ontio/ontology/common/constants"
 	"github.com/ontio/ontology/common/serialization"
 	"github.com/ontio/ontology/core/payload"
@@ -47,7 +48,6 @@ import (
 	"github.com/ontio/ontology/smartcontract/service/wasmvm"
 	cstates "github.com/ontio/ontology/smartcontract/states"
 	"github.com/ontio/ontology/vm/wasmvm/exec"
-	"github.com/ontio/ontology/common/config"
 )
 
 const (
@@ -722,7 +722,6 @@ func PrepareInvokeWasmVMContract(
 	params []interface{},
 ) (*cstates.PreExecResult, error) {
 
-
 	invokeCode, err := cutils.BuildWasmInvokeCode(contractAddress, params)
 	if err != nil {
 		return nil, fmt.Errorf("build invoke code error:%s", err)
@@ -746,7 +745,6 @@ func PrepareInvokeWasmVMContract(
 	return PrepareSendRawTransaction(txData)
 }
 
-
 func PrepareInvokeCodeWasmVMContract(code []byte) (*cstates.PreExecResult, error) {
 	mutable, err := httpcom.NewSmartContractTransaction(0, 0, code)
 	if err != nil {
@@ -764,7 +762,6 @@ func PrepareInvokeCodeWasmVMContract(code []byte) (*cstates.PreExecResult, error
 	txData := hex.EncodeToString(buffer.Bytes())
 	return PrepareSendRawTransaction(txData)
 }
-
 
 func PrepareInvokeNativeContract(
 	contractAddress common.Address,

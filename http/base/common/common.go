@@ -28,6 +28,7 @@ import (
 
 	"github.com/ontio/ontology-crypto/keypair"
 	"github.com/ontio/ontology/common"
+	"github.com/ontio/ontology/common/config"
 	"github.com/ontio/ontology/common/constants"
 	"github.com/ontio/ontology/common/log"
 	"github.com/ontio/ontology/common/serialization"
@@ -40,7 +41,6 @@ import (
 	"github.com/ontio/ontology/smartcontract/event"
 	"github.com/ontio/ontology/smartcontract/service/native/ongx"
 	"github.com/ontio/ontology/smartcontract/service/native/utils"
-	"github.com/ontio/ontology/common/config"
 )
 
 const MAX_SEARCH_HEIGHT uint32 = 100
@@ -426,8 +426,6 @@ func NewNativeInvokeTransaction(gasPirce, gasLimit uint64, contractAddress commo
 	return NewSmartContractTransaction(gasPirce, gasLimit, invokeCode)
 }
 
-
-
 func NewSmartContractTransaction(gasPrice, gasLimit uint64, invokeCode []byte) (*types.MutableTransaction, error) {
 	invokePayload := &payload.InvokeCode{
 		Code: invokeCode,
@@ -444,7 +442,6 @@ func NewSmartContractTransaction(gasPrice, gasLimit uint64, invokeCode []byte) (
 	}
 	return tx, nil
 }
-
 
 func GetAddress(str string) (common.Address, error) {
 	var address common.Address

@@ -29,6 +29,7 @@ type SigNeoVMInvokeTxReq struct {
 type SigNeoVMInvokeTxRsp struct {
 	SignedTx string `json:"signed_tx"`
 }
+
 //
 //func SigNeoVMInvokeTx(req *clisvrcom.CliRpcRequest, resp *clisvrcom.CliRpcResponse) {
 //	rawReq := &SigNeoVMInvokeTxReq{}

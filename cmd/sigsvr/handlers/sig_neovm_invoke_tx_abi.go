@@ -34,6 +34,7 @@ type SigNeoVMInvokeTxAbiReq struct {
 type SigNeoVMInvokeTxAbiRsp struct {
 	SignedTx string `json:"signed_tx"`
 }
+
 //
 //func SigNeoVMInvokeAbiTx(req *clisvrcom.CliRpcRequest, resp *clisvrcom.CliRpcResponse) {
 //	rawReq := &SigNeoVMInvokeTxAbiReq{}

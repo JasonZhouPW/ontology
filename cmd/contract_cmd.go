@@ -19,18 +19,17 @@
 package cmd
 
 import (
+	"encoding/json"
 	"fmt"
+	"github.com/urfave/cli"
 	"io/ioutil"
 	"strings"
-	"encoding/json"
-	"github.com/urfave/cli"
 
 	cmdcom "github.com/ontio/ontology/cmd/common"
 	"github.com/ontio/ontology/cmd/utils"
 	"github.com/ontio/ontology/common"
 	"github.com/ontio/ontology/common/config"
 	httpcom "github.com/ontio/ontology/http/base/common"
-
 )
 
 var (

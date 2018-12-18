@@ -22,15 +22,15 @@ import (
 	"bytes"
 	"fmt"
 	"github.com/ontio/ontology/common"
-	"github.com/ontio/ontology/common/serialization"
 	"github.com/ontio/ontology/common/config"
+	"github.com/ontio/ontology/common/serialization"
 	"github.com/ontio/ontology/core/payload"
 	"github.com/ontio/ontology/core/types"
+	"github.com/ontio/ontology/errors"
 	"github.com/ontio/ontology/smartcontract/service/native/ont"
 	"github.com/ontio/ontology/smartcontract/service/native/utils"
 	"math"
 	"reflect"
-	"github.com/ontio/ontology/errors"
 )
 
 type TxStruct struct {
@@ -166,16 +166,13 @@ func BuildNativeInvokeCode(contractAddress common.Address, version byte, method 
 }
 
 //add for wasm vm invoke code
-func BuildWasmInvokeCode(contractAddress common.Address,params []interface{})([]byte,error) {
+func BuildWasmInvokeCode(contractAddress common.Address, params []interface{}) ([]byte, error) {
 	bf := bytes.NewBuffer(nil)
 	if len(params) < 1 {
 		return nil, errors.NewErr("params count error")
 	}
 
 	//method := params[0].(string)
-
-
-
 
 	return bf.Bytes(), nil
 }
@@ -252,4 +249,3 @@ func buildParam(params []interface{}, bf *bytes.Buffer) error {
 
 	return nil
 }
-
