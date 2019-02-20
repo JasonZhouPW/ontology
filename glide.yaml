@@ -32,5 +32,7 @@ import:
   repo: https://github.com/golang/sys.git
   subpackages:
   - unix
+- package: github.com/go-interpreter/wagon
+  repo: https://github.com/ontio/wagon.git
 ignore:
   - golang.org/x/sys/unix
