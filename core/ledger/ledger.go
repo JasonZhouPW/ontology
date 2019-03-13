@@ -164,7 +164,7 @@ func (self *Ledger) GetStorageItem(codeHash common.Address, key []byte) ([]byte,
 	return storageItem.Value, nil
 }
 
-func (self *Ledger)GetStorageData(codeHash common.Address, key []byte)([]byte,error) {
+func (self *Ledger) GetStorageData(codeHash common.Address, key []byte) ([]byte, error) {
 	storageKey := &states.StorageKey{
 		ContractAddress: codeHash,
 		Key:             key,
