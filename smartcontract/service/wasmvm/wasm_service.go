@@ -31,6 +31,7 @@ import (
 	"github.com/ontio/ontology/smartcontract/event"
 	"github.com/ontio/ontology/smartcontract/states"
 	"github.com/ontio/ontology/smartcontract/storage"
+	"github.com/hashicorp/golang-lru"
 )
 
 type WasmVmService struct {
@@ -50,6 +51,7 @@ type WasmVmService struct {
 	vm            *exec.VM
 }
 
+
 var (
 	ERR_CHECK_STACK_SIZE  = errors.NewErr("[WasmVmService] vm over max stack size!")
 	ERR_EXECUTE_CODE      = errors.NewErr("[WasmVmService] vm execute code invalid!")
@@ -60,12 +62,21 @@ var (
 	VM_EXEC_FAULT         = errors.NewErr("[WasmVmService] vm execute state fault!")
 	VM_INIT_FAULT         = errors.NewErr("[WasmVmService] vm init state fault!")
 
+	CODE_CACHE_SIZE       = 100
 	CONTRACT_METHOD_NAME = "invoke"
 
 	//max memory size of wasm vm
 	WASM_MEM_LIMITATION uint64 = 10 * 1024 * 1024
 	VM_STEP_LIMIT              = 40000000
+
+	CodeCache   *lru.ARCCache
 )
+func init(){
+	CodeCache, _ = lru.NewARC(CODE_CACHE_SIZE)
+	//if err != nil{
+	//	log.Info("NewARC block error %s", err)
+	//}
+}
 
 func (this *WasmVmService) Invoke() (interface{}, error) {
 	if len(this.Code) == 0 {
@@ -86,25 +97,37 @@ func (this *WasmVmService) Invoke() (interface{}, error) {
 
 	this.ContextRef.PushContext(&context.Context{ContractAddress: contract.Address, Code: code.Code})
 	host := &Runtime{Service: this, Input: contract.Args}
-	m, err := wasm.ReadModule(bytes.NewReader(code.Code), func(name string) (*wasm.Module, error) {
-		switch name {
-		case "env":
-			return NewHostModule(), nil
+
+	var compiled *exec.CompiledModule
+	if CodeCache != nil  {
+		cached,ok := CodeCache.Get(contract.Address.ToHexString())
+		if ok {
+			compiled = cached.(*exec.CompiledModule)
 		}
-		return nil, fmt.Errorf("module %q unknown", name)
-	})
-	if err != nil {
-		return nil, err
 	}
 
-	if m.Export == nil {
-		return nil, errors.NewErr("[Call]No export in wasm!")
-	}
+	if compiled == nil{
+		m, err := wasm.ReadModule(bytes.NewReader(code.Code), func(name string) (*wasm.Module, error) {
+			switch name {
+			case "env":
+				return NewHostModule(), nil
+			}
+			return nil, fmt.Errorf("module %q unknown", name)
+		})
+		if err != nil {
+			return nil, err
+		}
 
-	//todo : cache this
-	compiled, err := exec.CompileModule(m)
-	if err != nil {
-		return nil, err
+		if m.Export == nil {
+			return nil, errors.NewErr("[Call]No export in wasm!")
+		}
+
+		//todo : cache this
+		compiled, err = exec.CompileModule(m)
+		if err != nil {
+			return nil, err
+		}
+		CodeCache.Add(contract.Address.ToHexString(),compiled)
 	}
 
 	vm, err := exec.NewVMWithCompiled(compiled, WASM_MEM_LIMITATION)
@@ -120,7 +143,7 @@ func (this *WasmVmService) Invoke() (interface{}, error) {
 
 	entryName := CONTRACT_METHOD_NAME
 
-	entry, ok := m.Export.Entries[entryName]
+	entry, ok := vm.GetModule().Export.Entries[entryName]
 
 	if ok == false {
 		return nil, errors.NewErr("[Call]Method:" + entryName + " does not exist!")
@@ -130,10 +153,10 @@ func (this *WasmVmService) Invoke() (interface{}, error) {
 	index := int64(entry.Index)
 
 	//get function index
-	fidx := m.Function.Types[int(index)]
+	fidx := vm.GetModule().Function.Types[int(index)]
 
 	//get  function type
-	ftype := m.Types.Entries[int(fidx)]
+	ftype := vm.GetModule().Types.Entries[int(fidx)]
 
 	//no returns of the entry function
 	if len(ftype.ReturnTypes) > 0 {
