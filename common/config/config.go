@@ -107,7 +107,7 @@ func GetNetworkMagic(id uint32) uint32 {
 var STATE_HASH_CHECK_HEIGHT = map[uint32]uint32{
 	NETWORK_ID_MAIN_NET:    constants.STATE_HASH_HEIGHT_MAINNET, //Network main
 	NETWORK_ID_POLARIS_NET: constants.STATE_HASH_HEIGHT_POLARIS, //Network polaris
-	NETWORK_ID_SOLO_NET:    0,                                   //Network solo
+	NETWORK_ID_SOLO_NET:    1000000000,                                   //Network solo
 }
 
 func GetStateHashCheckHeight(id uint32) uint32 {
