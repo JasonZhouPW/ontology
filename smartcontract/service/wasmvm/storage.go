@@ -22,9 +22,11 @@ import (
 	"math"
 
 	"github.com/go-interpreter/wagon/exec"
+	"github.com/ontio/ontology/core/states"
 )
 
 func StorageRead(proc *exec.Process, keyPtr uint32, klen uint32, val uint32, vlen uint32, offset uint32) uint32 {
+
 	self := proc.HostData().(*Runtime)
 	self.checkGas(STORAGE_GET_GAS)
 	keybytes := make([]byte, klen)
@@ -33,23 +35,35 @@ func StorageRead(proc *exec.Process, keyPtr uint32, klen uint32, val uint32, vle
 		panic(err)
 	}
 
-	key, err := serializeStorageKey(self.Service.ContextRef.CurrentContext().ContractAddress, keybytes)
-	if err != nil {
-		panic(err)
-	}
-	item, err := self.Service.CacheDB.Get(key)
+
+	key:= serializeStorageKey(self.Service.ContextRef.CurrentContext().ContractAddress, keybytes)
+
+	raw, err := self.Service.CacheDB.Get(key)
 	if err != nil {
 		panic(err)
 	}
 
-	if item == nil {
+	if raw == nil {
 		return math.MaxUint32
 	}
+
+	item, err := states.GetValueFromRawStorageItem(raw)
+	if err != nil {
+		panic(err)
+	}
+
+
+	length := vlen
+	itemlen := uint32(len(item))
+	if itemlen < vlen {
+		length = itemlen
+	}
+
 
 	if uint32(len(item)) < offset {
 		panic(errors.New("offset is invalid"))
 	}
-	_, err = proc.WriteAt(item[offset:offset+vlen], int64(val))
+	_, err = proc.WriteAt(item[offset:offset+length], int64(val))
 
 	if err != nil {
 		panic(err)
@@ -65,6 +79,7 @@ func StorageWrite(proc *exec.Process, keyPtr uint32, keylen uint32, valPtr uint3
 		panic(err)
 	}
 
+
 	valbytes := make([]byte, valLen)
 	_, err = proc.ReadAt(valbytes, int64(valPtr))
 	if err != nil {
@@ -74,12 +89,9 @@ func StorageWrite(proc *exec.Process, keyPtr uint32, keylen uint32, valPtr uint3
 	cost := uint64(((len(keybytes)+len(valbytes)-1)/1024 + 1)) * STORAGE_PUT_GAS
 	self.checkGas(cost)
 
-	key, err := serializeStorageKey(self.Service.ContextRef.CurrentContext().ContractAddress, keybytes)
-	if err != nil {
-		panic(err)
-	}
+	key := serializeStorageKey(self.Service.ContextRef.CurrentContext().ContractAddress, keybytes)
 
-	self.Service.CacheDB.Put(key, valbytes)
+	self.Service.CacheDB.Put(key, states.GenRawStorageItem(valbytes))
 }
 
 func StorageDelete(proc *exec.Process, keyPtr uint32, keylen uint32) {
@@ -90,9 +102,7 @@ func StorageDelete(proc *exec.Process, keyPtr uint32, keylen uint32) {
 	if err != nil {
 		panic(err)
 	}
-	key, err := serializeStorageKey(self.Service.ContextRef.CurrentContext().ContractAddress, keybytes)
-	if err != nil {
-		panic(err)
-	}
+	key := serializeStorageKey(self.Service.ContextRef.CurrentContext().ContractAddress, keybytes)
+
 	self.Service.CacheDB.Delete(key)
 }

@@ -184,10 +184,8 @@ func ContractMigrate(proc *exec.Process,
 		key := iter.Key()
 		val := iter.Value()
 
-		newkey, err := serializeStorageKey(contractAddr, key)
-		if err != nil {
-			panic(err)
-		}
+		newkey:= serializeStorageKey(contractAddr, key)
+
 		self.Service.CacheDB.Put(newkey, val)
 		self.Service.CacheDB.Delete(key)
 	}

@@ -82,7 +82,6 @@ func (this *WasmVmService) Invoke() (interface{}, error) {
 	if len(this.Code) == 0 {
 		return nil, ERR_EXECUTE_CODE
 	}
-
 	contract := &states.WasmContractParam{}
 	sink := common.NewZeroCopySource(this.Code)
 	err := contract.Deserialization(sink)
@@ -134,6 +133,7 @@ func (this *WasmVmService) Invoke() (interface{}, error) {
 	if err != nil {
 		return nil, VM_INIT_FAULT
 	}
+
 	vm.HostData = host
 	if this.PreExec {
 		this.GasLimit = uint64(VM_STEP_LIMIT)
@@ -165,6 +165,7 @@ func (this *WasmVmService) Invoke() (interface{}, error) {
 
 	//no args for passed in, all args in runtime input buffer
 	this.vm = vm
+
 	_, err = vm.ExecCode(index)
 	if err != nil {
 		return nil, errors.NewErr("[Call]ExecCode error!" + err.Error())
