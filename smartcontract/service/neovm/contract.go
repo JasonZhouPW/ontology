@@ -67,9 +67,9 @@ func ContractMigrate(service *NeoVmService, engine *vm.ExecutionEngine) error {
 	for has := iter.First(); has; has = iter.Next() {
 		key := iter.Key()
 		val := iter.Value()
-		fmt.Printf(" old key:%v\n",key)
+		fmt.Printf(" old key:%v\n", key)
 		newKey := genStorageKey(newAddr, key[20:])
-		fmt.Printf(" new key:%v\n",newKey)
+		fmt.Printf(" new key:%v\n", newKey)
 		service.CacheDB.Put(newKey, val)
 		service.CacheDB.Delete(key)
 	}

@@ -23,7 +23,6 @@ import (
 
 	"github.com/go-interpreter/wagon/exec"
 	"github.com/ontio/ontology/core/states"
-	"fmt"
 )
 
 func StorageRead(proc *exec.Process, keyPtr uint32, klen uint32, val uint32, vlen uint32, offset uint32) uint32 {
@@ -36,9 +35,7 @@ func StorageRead(proc *exec.Process, keyPtr uint32, klen uint32, val uint32, vle
 		panic(err)
 	}
 
-
-	key:= serializeStorageKey(self.Service.ContextRef.CurrentContext().ContractAddress, keybytes)
-	fmt.Printf("read key is %v\n",key)
+	key := serializeStorageKey(self.Service.ContextRef.CurrentContext().ContractAddress, keybytes)
 
 	raw, err := self.Service.CacheDB.Get(key)
 	if err != nil {
@@ -53,16 +50,12 @@ func StorageRead(proc *exec.Process, keyPtr uint32, klen uint32, val uint32, vle
 	if err != nil {
 		panic(err)
 	}
-	fmt.Printf("read val is %v\n",keybytes)
-
-
 
 	length := vlen
 	itemlen := uint32(len(item))
 	if itemlen < vlen {
 		length = itemlen
 	}
-
 
 	if uint32(len(item)) < offset {
 		panic(errors.New("offset is invalid"))
@@ -82,7 +75,6 @@ func StorageWrite(proc *exec.Process, keyPtr uint32, keylen uint32, valPtr uint3
 	if err != nil {
 		panic(err)
 	}
-
 
 	valbytes := make([]byte, valLen)
 	_, err = proc.ReadAt(valbytes, int64(valPtr))
@@ -106,7 +98,6 @@ func StorageDelete(proc *exec.Process, keyPtr uint32, keylen uint32) {
 	if err != nil {
 		panic(err)
 	}
-	fmt.Printf("del key is %s\n",keybytes)
 	key := serializeStorageKey(self.Service.ContextRef.CurrentContext().ContractAddress, keybytes)
 
 	self.Service.CacheDB.Delete(key)

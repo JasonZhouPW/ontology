@@ -21,6 +21,7 @@ import (
 	"bytes"
 	"reflect"
 
+	"encoding/hex"
 	"fmt"
 	"github.com/go-interpreter/wagon/exec"
 	"github.com/go-interpreter/wagon/wasm"
@@ -36,7 +37,6 @@ import (
 	"github.com/ontio/ontology/smartcontract/service/neovm"
 	"github.com/ontio/ontology/smartcontract/states"
 	neotypes "github.com/ontio/ontology/vm/neovm/types"
-	"encoding/hex"
 )
 
 type ContractType byte
@@ -156,9 +156,9 @@ func Notify(proc *exec.Process, ptr uint32, len uint32) {
 	if err != nil {
 		panic(err)
 	}
-	fmt.Printf("notify:%v\n",bs)
-	fmt.Printf("notify:%s\n",bs)
-	fmt.Printf("notify:%s\n",hex.EncodeToString(bs))
+	fmt.Printf("notify:%v\n", bs)
+	fmt.Printf("notify:%s\n", bs)
+	fmt.Printf("notify:%s\n", hex.EncodeToString(bs))
 
 	notify := &event.NotifyEventInfo{self.Service.ContextRef.CurrentContext().ContractAddress, string(bs)}
 	notifys := make([]*event.NotifyEventInfo, 1)
@@ -217,7 +217,6 @@ func GetCurrentTxHash(proc *exec.Process, ptr uint32) uint32 {
 //	panic(fmt.Errorf("[RaiseException]Contract RaiseException:%s\n", bs))
 //}
 func RaiseException(proc *exec.Process) {
-
 
 	panic(fmt.Errorf("[RaiseException]Contract RaiseException:%s\n"))
 }

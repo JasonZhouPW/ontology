@@ -65,5 +65,4 @@ type LedgerStore interface {
 	PreExecuteContract(tx *types.Transaction) (*cstates.PreExecResult, error)
 	GetEventNotifyByTx(tx common.Uint256) (*event.ExecuteNotify, error)
 	GetEventNotifyByBlock(height uint32) ([]*event.ExecuteNotify, error)
-	GetStorageData(key *states.StorageKey) ([]byte, error)
 }

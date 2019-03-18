@@ -991,10 +991,6 @@ func (this *LedgerStoreImp) GetStorageItem(key *states.StorageKey) (*states.Stor
 	return this.stateStore.GetStorageState(key)
 }
 
-func (this *LedgerStoreImp) GetStorageData(key *states.StorageKey) ([]byte, error) {
-	return this.stateStore.GetStorageData(key)
-}
-
 //GetEventNotifyByTx return the events notify gen by executing of smart contract.  Wrap function of EventStore.GetEventNotifyByTx
 func (this *LedgerStoreImp) GetEventNotifyByTx(tx common.Uint256) (*event.ExecuteNotify, error) {
 	return this.eventStore.GetEventNotifyByTx(tx)

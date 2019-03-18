@@ -23,7 +23,6 @@ import (
 	"github.com/ontio/ontology/common"
 	"github.com/ontio/ontology/core/payload"
 	"github.com/ontio/ontology/errors"
-	"fmt"
 )
 
 func ContractCreate(proc *exec.Process,
@@ -122,9 +121,6 @@ func ContractMigrate(proc *exec.Process,
 	descLen uint32,
 	newAddressPtr uint32) uint32 {
 
-
-	fmt.Println("===ContractMigrate 1")
-
 	self := proc.HostData().(*Runtime)
 
 	if uint32(proc.MemAllocated()) < codeLen+nameLen+verLen+authorLen+emailLen+descLen {
@@ -136,11 +132,9 @@ func ContractMigrate(proc *exec.Process,
 	if err != nil {
 		panic(err)
 	}
-	fmt.Println("===ContractMigrate 2")
 
 	cost := CONTRACT_CREATE_GAS + uint64(uint64(codeLen)/PER_UNIT_CODE_LEN)*UINT_DEPLOY_CODE_LEN_GAS
 	self.checkGas(cost)
-	fmt.Println("===ContractMigrate 3")
 
 	name := make([]byte, nameLen)
 	_, err = proc.ReadAt(name, int64(namePtr))
@@ -176,7 +170,6 @@ func ContractMigrate(proc *exec.Process,
 	if err != nil {
 		panic(err)
 	}
-	fmt.Println("===ContractMigrate 4")
 
 	contractAddr := dep.Address()
 	if self.isContractExist(contractAddr) {
@@ -184,20 +177,14 @@ func ContractMigrate(proc *exec.Process,
 	}
 	oldAddress := self.Service.ContextRef.CurrentContext().ContractAddress
 
-	fmt.Printf("old contract addr:%v\n",oldAddress)
-	fmt.Printf("new contract addr:%v\n",contractAddr)
-
 	self.Service.CacheDB.PutContract(dep)
 	self.Service.CacheDB.DeleteContract(oldAddress)
-	fmt.Println("===ContractMigrate 5")
 
 	iter := self.Service.CacheDB.NewIterator(oldAddress[:])
 	for has := iter.First(); has; has = iter.Next() {
 		key := iter.Key()
 		val := iter.Value()
-		fmt.Printf("oldkey is %v, val is %v \n",key,val)
-		newkey:= serializeStorageKey(contractAddr, key[20:])
-		fmt.Printf("newkey is %v\n",newkey)
+		newkey := serializeStorageKey(contractAddr, key[20:])
 
 		self.Service.CacheDB.Put(newkey, val)
 		self.Service.CacheDB.Delete(key)

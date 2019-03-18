@@ -164,14 +164,6 @@ func (self *Ledger) GetStorageItem(codeHash common.Address, key []byte) ([]byte,
 	return storageItem.Value, nil
 }
 
-func (self *Ledger) GetStorageData(codeHash common.Address, key []byte) ([]byte, error) {
-	storageKey := &states.StorageKey{
-		ContractAddress: codeHash,
-		Key:             key,
-	}
-	return self.ldgStore.GetStorageData(storageKey)
-}
-
 func (self *Ledger) GetContractState(contractHash common.Address) (*payload.DeployCode, error) {
 	return self.ldgStore.GetContractState(contractHash)
 }
