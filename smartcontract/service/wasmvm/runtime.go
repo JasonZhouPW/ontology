@@ -36,6 +36,7 @@ import (
 	"github.com/ontio/ontology/smartcontract/service/neovm"
 	"github.com/ontio/ontology/smartcontract/states"
 	neotypes "github.com/ontio/ontology/vm/neovm/types"
+	"encoding/hex"
 )
 
 type ContractType byte
@@ -155,8 +156,11 @@ func Notify(proc *exec.Process, ptr uint32, len uint32) {
 	if err != nil {
 		panic(err)
 	}
+	fmt.Printf("notify:%v\n",bs)
+	fmt.Printf("notify:%s\n",bs)
+	fmt.Printf("notify:%s\n",hex.EncodeToString(bs))
 
-	notify := &event.NotifyEventInfo{self.Service.ContextRef.CurrentContext().ContractAddress, bs}
+	notify := &event.NotifyEventInfo{self.Service.ContextRef.CurrentContext().ContractAddress, string(bs)}
 	notifys := make([]*event.NotifyEventInfo, 1)
 	notifys[0] = notify
 	self.Service.ContextRef.PushNotifications(notifys)
