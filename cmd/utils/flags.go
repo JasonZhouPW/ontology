@@ -282,6 +282,7 @@ var (
 	ContractVmTypeFlag = cli.UintFlag{
 		Name:  "vmtype",
 		Usage: "The Contract type: 1 for Neovm ,3 for Wasmvm",
+		Value: 1,
 	}
 	ContractCodeFileFlag = cli.StringFlag{
 		Name:  "code",
@@ -324,7 +325,7 @@ var (
 	}
 	ContractReturnTypeFlag = cli.StringFlag{
 		Name:  "return",
-		Usage: "Return `<type>` of contract. bytearray(hexstring), string, integer, boolean",
+		Usage: "Return `<type>` of contract. bytearray(hexstring), string, int, boolean",
 	}
 
 	//information cmd settings
