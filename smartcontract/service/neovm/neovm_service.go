@@ -74,6 +74,7 @@ var (
 		RUNTIME_SERIALIZE_NAME:               {Execute: RuntimeSerialize, Validator: validatorSerialize},
 		RUNTIME_DESERIALIZE_NAME:             {Execute: RuntimeDeserialize, Validator: validatorDeserialize},
 		NATIVE_INVOKE_NAME:                   {Execute: NativeInvoke},
+		WASM_INVOKE_NAME:                     {Execute: WASMInvoke},
 		STORAGE_GET_NAME:                     {Execute: StorageGet},
 		STORAGE_PUT_NAME:                     {Execute: StoragePut},
 		STORAGE_DELETE_NAME:                  {Execute: StorageDelete},

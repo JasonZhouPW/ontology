@@ -35,6 +35,7 @@ import (
 	native2 "github.com/ontio/ontology/smartcontract/service/native"
 	"github.com/ontio/ontology/smartcontract/service/native/utils"
 	"github.com/ontio/ontology/smartcontract/service/neovm"
+	"github.com/ontio/ontology/smartcontract/service/util"
 	"github.com/ontio/ontology/smartcontract/states"
 	neotypes "github.com/ontio/ontology/vm/neovm/types"
 )
@@ -156,7 +157,7 @@ func Notify(proc *exec.Process, ptr uint32, len uint32) {
 		panic(err)
 	}
 
-	list, err := deserializeInput(bs)
+	list, err := util.DeserializeInput(bs)
 	if err != nil {
 		panic(err)
 	}
@@ -316,7 +317,7 @@ func CallContract(proc *exec.Process, contractAddr uint32, inputPtr uint32, inpu
 		result = tmpRes.([]byte)
 
 	case NEOVM_CONTRACT:
-		parambytes, err := createNeoInvokeParam(contractAddress, inputs)
+		parambytes, err := util.CreateNeoInvokeParam(contractAddress, inputs)
 		if err != nil {
 			panic(err)
 		}

@@ -104,6 +104,7 @@ var (
 	RUNTIME_GETCURRENTBLOCKHASH_NAME = "Ontology.Runtime.GetCurrentBlockHash"
 
 	NATIVE_INVOKE_NAME = "Ontology.Native.Invoke"
+	WASM_INVOKE_NAME   = "Ontology.Wasm.Invoke"
 
 	GETSCRIPTCONTAINER_NAME     = "System.ExecutionEngine.GetScriptContainer"
 	GETEXECUTINGSCRIPTHASH_NAME = "System.ExecutionEngine.GetExecutingScriptHash"
