@@ -49,7 +49,6 @@ var ERROR_PARAM_NOT_SUPPORTED_TYPE = fmt.Errorf("error param format:not supporte
 // version(1byte) + type(1byte) + usize( bytearray or list) (4 bytes) + data...
 
 func DeserializeInput(input []byte) ([]interface{}, error) {
-
 	if input == nil {
 		return nil, nil
 	}
@@ -59,12 +58,12 @@ func DeserializeInput(input []byte) ([]interface{}, error) {
 	if len(input) > MAX_PARAM_LENGTH {
 		return nil, ERROR_PARAM_TOO_LONG
 	}
-
 	version := input[0]
 	//current only support "0" version
 	if version != byte(0) {
 		return nil, ERROR_PARAM_FORMAT
 	}
+
 	paramlist := make([]interface{}, 0)
 	err := anaylzeInput(input[1:], &paramlist)
 	if err != nil {
@@ -83,18 +82,20 @@ func anaylzeInput(input []byte, ret *[]interface{}) error {
 	switch input[0] {
 	case ByteArrayType:
 		//usize is 4 bytes
-
 		if len(input[1:]) < 4 {
 			return ERROR_PARAM_FORMAT
 		}
+
 		sizebytes := input[1:5]
 		size := binary.LittleEndian.Uint32(sizebytes)
 		if size == 0 {
 			return ERROR_PARAM_FORMAT
 		}
+
 		if len(input[5:]) < int(size) {
 			return ERROR_PARAM_FORMAT
 		}
+
 		bs := input[5 : 5+size]
 		*ret = append(*ret, bs)
 		return anaylzeInput(input[5+size:], ret)
@@ -163,13 +164,16 @@ func anaylzeInput(input []byte, ret *[]interface{}) error {
 		if len(input[1:]) < 4 {
 			return ERROR_PARAM_FORMAT
 		}
+
 		sizebytes := input[1:5]
 		size := binary.LittleEndian.Uint32(sizebytes)
 		list := make([]interface{}, 0)
 		rest, err := anaylzeList(input[5:], int(size), &list)
+
 		if err != nil {
 			return err
 		}
+
 		*ret = append(*ret, list)
 		return anaylzeInput(rest, ret)
 	default:
@@ -187,7 +191,6 @@ func anaylzeList(input []byte, listsize int, list *[]interface{}) ([]byte, error
 		switch input[0] {
 		case ByteArrayType:
 			//usize is 4 bytes
-
 			if len(input[1:]) < 4 {
 				return nil, ERROR_PARAM_FORMAT
 			}
@@ -196,6 +199,7 @@ func anaylzeList(input []byte, listsize int, list *[]interface{}) ([]byte, error
 			if size == 0 {
 				return nil, ERROR_PARAM_FORMAT
 			}
+
 			if len(input[5:]) < int(size) {
 				return nil, ERROR_PARAM_FORMAT
 			}

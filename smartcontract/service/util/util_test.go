@@ -15,7 +15,7 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with The ontology.  If not, see <http://www.gnu.org/licenses/>.
  */
-package wasmvm
+package util
 
 import (
 	"bytes"
@@ -40,7 +40,7 @@ func TestDeserializeInput(t *testing.T) {
 	bf.Write(tmp)
 	bf.Write(s)
 
-	list, err := deserializeInput(bf.Bytes())
+	list, err := DeserializeInput(bf.Bytes())
 	assert.Nil(t, err)
 	assert.NotNil(t, list)
 
@@ -55,7 +55,7 @@ func TestDeserializeInput(t *testing.T) {
 	addr, _ := common.AddressFromBase58("AY5hDhn2z8ND6F4JF9rQV1a4SDUT4aUr88")
 	bf.Write(addr[:])
 
-	list, err = deserializeInput(bf.Bytes())
+	list, err = DeserializeInput(bf.Bytes())
 	assert.Nil(t, err)
 	assert.NotNil(t, list)
 	assert.Equal(t, len(list), 1)
@@ -68,7 +68,7 @@ func TestDeserializeInput(t *testing.T) {
 	bf.WriteByte(BooleanType)
 	bf.WriteByte(byte(1))
 
-	list, err = deserializeInput(bf.Bytes())
+	list, err = DeserializeInput(bf.Bytes())
 	assert.Nil(t, err)
 	assert.NotNil(t, list)
 	assert.Equal(t, len(list), 1)
@@ -82,7 +82,7 @@ func TestDeserializeInput(t *testing.T) {
 	binary.LittleEndian.PutUint32(tmpbytes, uint32(100000))
 	bf.Write(tmpbytes)
 
-	list, err = deserializeInput(bf.Bytes())
+	list, err = DeserializeInput(bf.Bytes())
 	assert.Nil(t, err)
 	assert.NotNil(t, list)
 	assert.Equal(t, len(list), 1)
@@ -100,7 +100,7 @@ func TestDeserializeInput(t *testing.T) {
 
 	bf.Write(tmpbf.Bytes())
 
-	list, err = deserializeInput(bf.Bytes())
+	list, err = DeserializeInput(bf.Bytes())
 	assert.Nil(t, err)
 	assert.NotNil(t, list)
 	assert.Equal(t, len(list), 1)
@@ -115,7 +115,7 @@ func TestDeserializeInput(t *testing.T) {
 	binary.Write(tmpbf, binary.LittleEndian, &tmpint)
 	bf.Write(tmpbf.Bytes())
 
-	list, err = deserializeInput(bf.Bytes())
+	list, err = DeserializeInput(bf.Bytes())
 	assert.Nil(t, err)
 	assert.NotNil(t, list)
 	assert.Equal(t, len(list), 1)
@@ -130,7 +130,7 @@ func TestDeserializeInput(t *testing.T) {
 	binary.LittleEndian.PutUint64(tmpbytes, uint64(10000000000))
 	bf.Write(tmpbytes)
 
-	list, err = deserializeInput(bf.Bytes())
+	list, err = DeserializeInput(bf.Bytes())
 	assert.Nil(t, err)
 	assert.NotNil(t, list)
 	assert.Equal(t, len(list), 1)
@@ -144,7 +144,7 @@ func TestDeserializeInput(t *testing.T) {
 	u256, err := common.Uint256FromHexString("11111111AAAAAAAA8888888877777777")
 	bf.Write(u256[:])
 
-	list, err = deserializeInput(bf.Bytes())
+	list, err = DeserializeInput(bf.Bytes())
 	assert.Nil(t, err)
 	assert.NotNil(t, list)
 	assert.Equal(t, len(list), 1)
@@ -171,7 +171,7 @@ func TestDeserializeInput(t *testing.T) {
 	addr, _ = common.AddressFromBase58("AY5hDhn2z8ND6F4JF9rQV1a4SDUT4aUr88")
 	bf.Write(addr[:])
 
-	list, err = deserializeInput(bf.Bytes())
+	list, err = DeserializeInput(bf.Bytes())
 	assert.Nil(t, err)
 	assert.NotNil(t, list)
 	assert.Equal(t, len(list), 1)
@@ -227,7 +227,7 @@ func TestDeserializeInput(t *testing.T) {
 	bf.Write(tmp)
 	bf.Write(s)
 
-	list, err = deserializeInput(bf.Bytes())
+	list, err = DeserializeInput(bf.Bytes())
 	assert.Nil(t, err)
 	assert.NotNil(t, list)
 	assert.Equal(t, len(list), 1)
@@ -244,5 +244,40 @@ func TestDeserializeInput(t *testing.T) {
 
 	assert.Equal(t, string(ssublist2[0].([]byte)), "helloworld")
 	assert.Equal(t, string(ssublist2[1].([]byte)), "nested list")
+
+}
+
+func TestBuildNeoVMParam(t *testing.T) {
+	bf := bytes.NewBuffer(nil)
+	bf.WriteByte(byte(0))
+	bf.WriteByte(ByteArrayType)
+
+	s := []byte("test")
+	length := len(s)
+	tmp := make([]byte, 4)
+	binary.LittleEndian.PutUint32(tmp, uint32(length))
+	bf.Write(tmp)
+	bf.Write(s)
+
+	bf.WriteByte(ListType)
+	tmp = make([]byte, 4)
+	binary.LittleEndian.PutUint32(tmp, uint32(1))
+
+	bf.WriteByte(ByteArrayType)
+	s = []byte("helloworld")
+	length = len(s)
+	tmp = make([]byte, 4)
+	binary.LittleEndian.PutUint32(tmp, uint32(length))
+	bf.Write(tmp)
+	bf.Write(s)
+
+	fmt.Printf("%+v", bf.Bytes())
+	fmt.Print("{")
+	bs := bf.Bytes()
+	for b := range bs {
+		fmt.Printf("'%v',", b)
+
+	}
+	fmt.Print("}")
 
 }

@@ -31,24 +31,17 @@ import (
 //neovm contract call wasmvm contract
 func WASMInvoke(service *NeoVmService, engine *vm.ExecutionEngine) error {
 	count := vm.EvaluationStackCount(engine)
-	if count < 1 {
+	if count < 2 {
 		return fmt.Errorf("invoke wasm contract invalid parameters %d < 1 ", count)
 	}
-	parambytes, err := vm.PopByteArray(engine)
-	if err != nil {
-		return err
-	}
-	list, err := util.DeserializeInput(parambytes)
-	if err != nil {
-		return err
-	}
-	if len(list) < 1 {
-		return fmt.Errorf("need wasm contract address")
-	}
 
-	contractAddress, ok := list[0].(common.Address)
-	if !ok {
-		return fmt.Errorf("first param should be wasm contract address")
+	address, err := vm.PopByteArray(engine)
+	if err != nil {
+		return err
+	}
+	contractAddress, err := common.AddressParseFromBytes(address)
+	if err != nil {
+		return fmt.Errorf("invoke wasm contract:%s, address invalid", address)
 	}
 
 	dp, err := service.CacheDB.GetContract(contractAddress)
@@ -62,7 +55,16 @@ func WASMInvoke(service *NeoVmService, engine *vm.ExecutionEngine) error {
 		return fmt.Errorf("not a wasm contract")
 	}
 
-	inputs, err := util.BuildWasmVMInvokeCode(contractAddress, list[1:])
+	parambytes, err := vm.PopByteArray(engine)
+	if err != nil {
+		return err
+	}
+	list, err := util.DeserializeInput(parambytes)
+	if err != nil {
+		return err
+	}
+
+	inputs, err := util.BuildWasmVMInvokeCode(contractAddress, list)
 	if err != nil {
 		return err
 	}
