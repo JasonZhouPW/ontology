@@ -18,10 +18,12 @@
 package wasmvm
 
 import (
+	"bytes"
 	"encoding/binary"
 	"fmt"
 	"github.com/ontio/ontology/common"
-	"bytes"
+	cutils "github.com/ontio/ontology/core/utils"
+	"github.com/ontio/ontology/vm/neovm"
 )
 
 const (
@@ -34,7 +36,7 @@ const (
 	Uint256Type   byte = 0x06
 	ListType      byte = 0x07
 
-	MAX_PARAM_LENGTH = 10240
+	MAX_PARAM_LENGTH = 1024
 )
 
 var ERROR_PARAM_FORMAT = fmt.Errorf("error param format")
@@ -42,7 +44,7 @@ var ERROR_PARAM_TOO_LONG = fmt.Errorf("param length is exceeded")
 var ERROR_PARAM_NOT_SUPPORTED_TYPE = fmt.Errorf("error param format:not supported type")
 
 //input byte array should be the following format
-// version(1byte) + type(1byte) + usize( bytearray or list) (4 bytes) + data
+// version(1byte) + type(1byte) + usize( bytearray or list) (4 bytes) + data...
 
 func deserializeInput(input []byte) ([]interface{}, error) {
 
@@ -52,8 +54,8 @@ func deserializeInput(input []byte) ([]interface{}, error) {
 	if len(input) == 0 {
 		return nil, ERROR_PARAM_FORMAT
 	}
-	if len(input) > MAX_PARAM_LENGTH{
-		return nil,ERROR_PARAM_TOO_LONG
+	if len(input) > MAX_PARAM_LENGTH {
+		return nil, ERROR_PARAM_TOO_LONG
 	}
 
 	version := input[0]
@@ -61,7 +63,7 @@ func deserializeInput(input []byte) ([]interface{}, error) {
 	if version != byte(0) {
 		return nil, ERROR_PARAM_FORMAT
 	}
-	paramlist:= make([]interface{},0)
+	paramlist := make([]interface{}, 0)
 	err := anaylzeInput(input[1:], &paramlist)
 	if err != nil {
 		return nil, err
@@ -124,16 +126,16 @@ func anaylzeInput(input []byte, ret *[]interface{}) error {
 		}
 		i32bytes := input[1:5]
 		i32 := binary.LittleEndian.Uint32(i32bytes)
-		*ret = append(*ret,i32)
-		return anaylzeInput(input[5:],ret)
+		*ret = append(*ret, i32)
+		return anaylzeInput(input[5:], ret)
 	case Int64Type:
 		if len(input[1:]) < 8 {
-			return  ERROR_PARAM_FORMAT
+			return ERROR_PARAM_FORMAT
 		}
 		i64bytes := input[1:9]
-		tmpbf:= bytes.NewBuffer(i64bytes)
+		tmpbf := bytes.NewBuffer(i64bytes)
 		var x int64
-		binary.Read(tmpbf,binary.LittleEndian,&x)
+		binary.Read(tmpbf, binary.LittleEndian, &x)
 		*ret = append(*ret, x)
 		return anaylzeInput(input[9:], ret)
 	case Uint64Type:
@@ -162,7 +164,7 @@ func anaylzeInput(input []byte, ret *[]interface{}) error {
 		sizebytes := input[1:5]
 		size := binary.LittleEndian.Uint32(sizebytes)
 		list := make([]interface{}, 0)
-		rest, err := anaylzeList(input[5:], int(size),&list)
+		rest, err := anaylzeList(input[5:], int(size), &list)
 		if err != nil {
 			return err
 		}
@@ -174,13 +176,12 @@ func anaylzeInput(input []byte, ret *[]interface{}) error {
 
 }
 
-func anaylzeList(input []byte, listsize int,list *[]interface{}) ([]byte, error) {
+func anaylzeList(input []byte, listsize int, list *[]interface{}) ([]byte, error) {
 	if input == nil || len(input) == 0 {
 		return nil, nil
 	}
 
-
-	for i:= 0 ; i < listsize; i++{
+	for i := 0; i < listsize; i++ {
 		switch input[0] {
 		case ByteArrayType:
 			//usize is 4 bytes
@@ -225,22 +226,22 @@ func anaylzeList(input []byte, listsize int,list *[]interface{}) ([]byte, error)
 			input = input[2:]
 		case UsizeType:
 			if len(input[1:]) < 4 {
-				return nil,ERROR_PARAM_FORMAT
+				return nil, ERROR_PARAM_FORMAT
 			}
 			i32bytes := input[1:5]
 			i32 := binary.LittleEndian.Uint32(i32bytes)
-			*list = append(*list,i32)
-			input =  input[5:]
+			*list = append(*list, i32)
+			input = input[5:]
 		case Int64Type:
 			if len(input[1:]) < 8 {
 				return nil, ERROR_PARAM_FORMAT
 			}
 			i64bytes := input[1:9]
-			tmpbf:= bytes.NewBuffer(i64bytes)
+			tmpbf := bytes.NewBuffer(i64bytes)
 			var x int64
-			binary.Read(tmpbf,binary.LittleEndian,&x)
+			binary.Read(tmpbf, binary.LittleEndian, &x)
 			*list = append(*list, x)
-			input =  input[9:]
+			input = input[9:]
 		case Uint64Type:
 			if len(input[1:]) < 8 {
 				return nil, ERROR_PARAM_FORMAT
@@ -268,17 +269,38 @@ func anaylzeList(input []byte, listsize int,list *[]interface{}) ([]byte, error)
 			size := binary.LittleEndian.Uint32(sizebytes)
 			sublist := make([]interface{}, 0)
 			bs := input[5:]
-			rest, err := anaylzeList(bs,int(size), &sublist)
-			if err != nil{
+			rest, err := anaylzeList(bs, int(size), &sublist)
+			if err != nil {
 				return nil, err
 			}
 
 			*list = append(*list, sublist)
 			input = rest
 		default:
-			return nil,ERROR_PARAM_FORMAT
+			return nil, ERROR_PARAM_FORMAT
 		}
 	}
 
-	return input,nil
+	return input, nil
+}
+
+func createNeoInvokeParam(contractAddress common.Address, input []byte) ([]byte, error) {
+
+	list, err := deserializeInput(input)
+	if err != nil {
+		return nil, err
+	}
+
+	if list == nil {
+		return nil, nil
+	}
+
+	builder := neovm.NewParamsBuilder(new(bytes.Buffer))
+	err = cutils.BuildNeoVMParam(builder, list)
+	if err != nil {
+		return nil, err
+	}
+	args := append(builder.ToArray(), 0x67)
+	args = append(args, contractAddress[:]...)
+	return args, nil
 }

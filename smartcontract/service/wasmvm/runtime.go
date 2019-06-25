@@ -156,7 +156,12 @@ func Notify(proc *exec.Process, ptr uint32, len uint32) {
 		panic(err)
 	}
 
-	notify := &event.NotifyEventInfo{self.Service.ContextRef.CurrentContext().ContractAddress, string(bs)}
+	list, err := deserializeInput(bs)
+	if err != nil {
+		panic(err)
+	}
+
+	notify := &event.NotifyEventInfo{self.Service.ContextRef.CurrentContext().ContractAddress, list}
 	notifys := make([]*event.NotifyEventInfo, 1)
 	notifys[0] = notify
 	self.Service.ContextRef.PushNotifications(notifys)
@@ -311,7 +316,12 @@ func CallContract(proc *exec.Process, contractAddr uint32, inputPtr uint32, inpu
 		result = tmpRes.([]byte)
 
 	case NEOVM_CONTRACT:
-		neoservice, err := self.Service.ContextRef.NewExecuteEngine(inputs, types.InvokeNeo)
+		parambytes, err := createNeoInvokeParam(contractAddress, inputs)
+		if err != nil {
+			panic(err)
+		}
+
+		neoservice, err := self.Service.ContextRef.NewExecuteEngine(parambytes, types.InvokeNeo)
 		if err != nil {
 			panic(err)
 		}
