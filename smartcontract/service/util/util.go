@@ -21,11 +21,13 @@ import (
 	"bytes"
 	"encoding/binary"
 	"fmt"
+	"math/big"
+	"reflect"
+
 	"github.com/ontio/ontology/common"
 	cstate "github.com/ontio/ontology/smartcontract/states"
 	"github.com/ontio/ontology/vm/neovm"
-	"math/big"
-	"reflect"
+	neotypes "github.com/ontio/ontology/vm/neovm/types"
 )
 
 const (
@@ -38,7 +40,8 @@ const (
 	Uint256Type   byte = 0x06
 	ListType      byte = 0x07
 
-	MAX_PARAM_LENGTH = 1024
+	MAX_PARAM_LENGTH      = 1024
+	VERSION          byte = 0
 )
 
 var ERROR_PARAM_FORMAT = fmt.Errorf("error param format")
@@ -60,7 +63,7 @@ func DeserializeInput(input []byte) ([]interface{}, error) {
 	}
 	version := input[0]
 	//current only support "0" version
-	if version != byte(0) {
+	if version != VERSION {
 		return nil, ERROR_PARAM_FORMAT
 	}
 
@@ -440,4 +443,69 @@ func buildWasmContractParam(params []interface{}, bf *common.ZeroCopySink) ([]by
 	}
 	return bf.Bytes(), nil
 
+}
+
+func BuildResultFromNeo(item neotypes.StackItems, bf *bytes.Buffer) error {
+
+	switch item.(type) {
+	case *neotypes.ByteArray:
+		bs, err := item.GetByteArray()
+		if err != nil {
+			return err
+		}
+		bf.WriteByte(byte(ByteArrayType))
+		size := uint32(len(bs))
+		tmpbytes := make([]byte, 4)
+		binary.LittleEndian.PutUint32(tmpbytes, size)
+		bf.Write(tmpbytes)
+		bf.Write(bs)
+
+	case *neotypes.Integer:
+		val, err := item.GetBigInteger()
+		if err != nil {
+			return err
+		}
+		bf.WriteByte(byte(Int64Type))
+		tmpbf := bytes.NewBuffer(nil)
+		err = binary.Write(tmpbf, binary.LittleEndian, val.Int64())
+		if err != nil {
+			return err
+		}
+		bf.Write(tmpbf.Bytes())
+	case *neotypes.Boolean:
+		val, err := item.GetBoolean()
+		if err != nil {
+			return err
+		}
+		bf.WriteByte(byte(BooleanType))
+		if val {
+			bf.WriteByte(byte(1))
+		} else {
+			bf.WriteByte(byte(0))
+		}
+	case *neotypes.Array:
+		val, err := item.GetArray()
+		if err != nil {
+			return err
+		}
+		if val == nil {
+			return fmt.Errorf("get array error")
+		}
+
+		bf.WriteByte(byte(ListType))
+		size := uint32(len(val))
+		tmpbs := make([]byte, 4)
+		binary.LittleEndian.PutUint32(tmpbs, size)
+		bf.Write(tmpbs)
+		for _, si := range val {
+			err = BuildResultFromNeo(si, bf)
+			if err != nil {
+				return err
+			}
+		}
+
+	default:
+		return fmt.Errorf("not a supported return type")
+	}
+	return nil
 }

@@ -34,7 +34,6 @@ import (
 	"github.com/ontio/ontology/smartcontract/event"
 	native2 "github.com/ontio/ontology/smartcontract/service/native"
 	"github.com/ontio/ontology/smartcontract/service/native/utils"
-	"github.com/ontio/ontology/smartcontract/service/neovm"
 	"github.com/ontio/ontology/smartcontract/service/util"
 	"github.com/ontio/ontology/smartcontract/states"
 	neotypes "github.com/ontio/ontology/vm/neovm/types"
@@ -332,13 +331,14 @@ func CallContract(proc *exec.Process, contractAddr uint32, inputPtr uint32, inpu
 		}
 		switch tmp.(type) {
 		case neotypes.StackItems:
-			result, err = tmp.(neotypes.StackItems).GetByteArray()
+			//version
+			bf := bytes.NewBuffer([]byte{util.VERSION})
+			err := util.BuildResultFromNeo(tmp.(neotypes.StackItems), bf)
 			if err != nil {
-				result, err = neovm.SerializeStackItem(tmp.(neotypes.StackItems))
-				if err != nil {
-					panic(err)
-				}
+				panic(err)
 			}
+			result = bf.Bytes()
+
 		default:
 			panic(errors.NewErr("Invalid return type of NeoVM"))
 		}

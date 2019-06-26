@@ -24,7 +24,6 @@ import (
 	"github.com/ontio/ontology/core/payload"
 	"github.com/ontio/ontology/core/types"
 	"github.com/ontio/ontology/smartcontract/service/util"
-	"github.com/ontio/ontology/smartcontract/states"
 	vm "github.com/ontio/ontology/vm/neovm"
 )
 
@@ -39,6 +38,7 @@ func WASMInvoke(service *NeoVmService, engine *vm.ExecutionEngine) error {
 	if err != nil {
 		return err
 	}
+
 	contractAddress, err := common.AddressParseFromBytes(address)
 	if err != nil {
 		return fmt.Errorf("invoke wasm contract:%s, address invalid", address)
@@ -69,11 +69,7 @@ func WASMInvoke(service *NeoVmService, engine *vm.ExecutionEngine) error {
 		return err
 	}
 
-	conParam := states.WasmContractParam{Address: contractAddress, Args: inputs}
-	sink := common.NewZeroCopySink(nil)
-	conParam.Serialization(sink)
-
-	newservice, err := service.ContextRef.NewExecuteEngine(sink.Bytes(), types.InvokeWasm)
+	newservice, err := service.ContextRef.NewExecuteEngine(inputs, types.InvokeWasm)
 	if err != nil {
 		return err
 	}
@@ -82,6 +78,7 @@ func WASMInvoke(service *NeoVmService, engine *vm.ExecutionEngine) error {
 	if err != nil {
 		return err
 	}
+
 	vm.PushData(engine, tmpRes.([]byte))
 	return nil
 

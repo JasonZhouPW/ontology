@@ -21,9 +21,12 @@ import (
 	"bytes"
 	"encoding/binary"
 	"fmt"
-	"github.com/ontio/ontology/common"
-	"github.com/stretchr/testify/assert"
+	"math/big"
 	"testing"
+
+	"github.com/ontio/ontology/common"
+	"github.com/ontio/ontology/vm/neovm/types"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestDeserializeInput(t *testing.T) {
@@ -247,37 +250,85 @@ func TestDeserializeInput(t *testing.T) {
 
 }
 
-func TestBuildNeoVMParam(t *testing.T) {
-	bf := bytes.NewBuffer(nil)
-	bf.WriteByte(byte(0))
-	bf.WriteByte(ByteArrayType)
-
-	s := []byte("test")
-	length := len(s)
-	tmp := make([]byte, 4)
-	binary.LittleEndian.PutUint32(tmp, uint32(length))
-	bf.Write(tmp)
-	bf.Write(s)
-
-	bf.WriteByte(ListType)
-	tmp = make([]byte, 4)
-	binary.LittleEndian.PutUint32(tmp, uint32(1))
-
-	bf.WriteByte(ByteArrayType)
-	s = []byte("helloworld")
-	length = len(s)
-	tmp = make([]byte, 4)
-	binary.LittleEndian.PutUint32(tmp, uint32(length))
-	bf.Write(tmp)
-	bf.Write(s)
-
-	fmt.Printf("%+v", bf.Bytes())
-	fmt.Print("{")
+func TestBuildResultFromNeo(t *testing.T) {
+	fmt.Println("===Test Bytearray")
+	ba := types.NewByteArray([]byte("helloworld"))
+	bf := bytes.NewBuffer([]byte{VERSION})
+	err := BuildResultFromNeo(ba, bf)
+	assert.Nil(t, err)
 	bs := bf.Bytes()
-	for b := range bs {
-		fmt.Printf("'%v',", b)
+	assert.NotNil(t, bs)
+	list, err := DeserializeInput(bs)
+	assert.Equal(t, string(list[0].([]byte)), "helloworld")
 
-	}
-	fmt.Print("}")
+	fmt.Println("===Test Bool")
+	bf = bytes.NewBuffer([]byte{VERSION})
+	bv := types.NewBoolean(false)
+	err = BuildResultFromNeo(bv, bf)
+	assert.Nil(t, err)
+	bs = bf.Bytes()
+	assert.NotNil(t, bs)
+	list, err = DeserializeInput(bs)
+	assert.False(t, list[0].(bool))
+
+	fmt.Println("===Test Int")
+	bf = bytes.NewBuffer([]byte{VERSION})
+	iv := types.NewInteger(big.NewInt(int64(10000000)))
+	err = BuildResultFromNeo(iv, bf)
+	assert.Nil(t, err)
+	bs = bf.Bytes()
+	assert.NotNil(t, bs)
+	list, err = DeserializeInput(bs)
+	assert.Equal(t, list[0].(int64), int64(10000000))
+
+	fmt.Println("===Test Array single bytearray")
+	bf = bytes.NewBuffer([]byte{VERSION})
+	ba = types.NewByteArray([]byte("helloworld"))
+	array := types.NewArray([]types.StackItems{ba})
+	err = BuildResultFromNeo(array, bf)
+	assert.Nil(t, err)
+	bs = bf.Bytes()
+	assert.NotNil(t, bs)
+	list, err = DeserializeInput(bs)
+	assert.Equal(t, string(list[0].([]interface{})[0].([]byte)), "helloworld")
+
+	fmt.Println("===Test Array  bytearray ,bool and int")
+	bf = bytes.NewBuffer([]byte{VERSION})
+	ba = types.NewByteArray([]byte("helloworld"))
+	bv = types.NewBoolean(true)
+	iv = types.NewInteger(big.NewInt(int64(10000000)))
+	array = types.NewArray([]types.StackItems{ba, bv, iv})
+	err = BuildResultFromNeo(array, bf)
+	assert.Nil(t, err)
+	bs = bf.Bytes()
+	fmt.Printf("%v\n", bs)
+	assert.NotNil(t, bs)
+	list, err = DeserializeInput(bs)
+	assert.Equal(t, string(list[0].([]interface{})[0].([]byte)), "helloworld")
+	assert.True(t, list[0].([]interface{})[1].(bool))
+	assert.Equal(t, list[0].([]interface{})[2].(int64), int64(10000000))
+
+	fmt.Println("===Test nested Array ")
+	bf = bytes.NewBuffer([]byte{VERSION})
+	ba = types.NewByteArray([]byte("helloworld"))
+	array1 := types.NewArray([]types.StackItems{ba})
+	iv = types.NewInteger(big.NewInt(int64(10000000)))
+	array2 := types.NewArray([]types.StackItems{iv})
+	array = types.NewArray([]types.StackItems{array1, array2})
+	err = BuildResultFromNeo(array, bf)
+	assert.Nil(t, err)
+	bs = bf.Bytes()
+	assert.NotNil(t, bs)
+	list, err = DeserializeInput(bs)
+
+	assert.Equal(t, string(list[0].([]interface{})[0].([]interface{})[0].([]byte)), "helloworld")
+	assert.Equal(t, list[0].([]interface{})[1].([]interface{})[0].(int64), int64(10000000))
+
+	fmt.Println("===Test unsupport type")
+	bf = bytes.NewBuffer([]byte{VERSION})
+	mapv := types.NewMap()
+	mapv.Add(ba, iv)
+	err = BuildResultFromNeo(mapv, bf)
+	assert.NotNil(t, err)
 
 }
