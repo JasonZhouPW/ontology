@@ -21,6 +21,9 @@ package stateful
 import (
 	"github.com/gammazero/workerpool"
 
+	ethcomm "github.com/ethereum/go-ethereum/common"
+	"github.com/ontio/ontology-eventbus/actor"
+	"github.com/ontio/ontology/common/log"
 	"github.com/ontio/ontology/core/ledger"
 	"github.com/ontio/ontology/core/types"
 	"github.com/ontio/ontology/errors"
@@ -47,6 +50,21 @@ func (self *ValidatorPool) SubmitVerifyTask(tx *types.Transaction, rspCh chan<- 
 			errCode = errors.ErrUnknown
 		} else if exist {
 			errCode = errors.ErrDuplicatedTx
+		} else if msg.Tx.TxType == types.EIP155 {
+			//check balance
+			balance, err := proc.GetOngBalance(msg.Tx.Payer)
+			if err != nil {
+				errCode = errors.ErrUnknown
+			} else if balance.Cmp(msg.Tx.Cost()) < 0 {
+				errCode = errors.ErrTransactionBalance
+			} else {
+				ethacct, err := ledger.DefLedger.GetStore().GetCacheDB().GetEthAccount(ethcomm.BytesToAddress(msg.Tx.Payer[:]))
+				if err != nil {
+					errCode = errors.ErrNoAccount
+				} else if uint64(msg.Tx.Nonce) < ethacct.Nonce {
+					errCode = errors.ErrHigherNonceExist
+				}
+			}
 		}
 
 		response := &vatypes.CheckResponse{
