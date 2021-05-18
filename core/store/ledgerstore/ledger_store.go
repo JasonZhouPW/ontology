@@ -733,7 +733,6 @@ func (this *LedgerStoreImp) executeBlock(block *types.Block) (result store.Execu
 
 		return true
 	})
-
 	cache := storage.NewCacheDB(overlay)
 	for i, tx := range block.Transactions {
 		cache.Reset()
@@ -1017,15 +1016,18 @@ func (this *LedgerStoreImp) handleTransaction(overlay *overlaydb.OverlayDB, cach
 			log.Debugf("HandleInvokeTransaction tx %s error %s", txHash.ToHexString(), err)
 		}
 	case types.EIP155:
-		//todo determin the param and return
-		crossStateHashes, err = this.stateStore.HandleEIP155Transaction(this, overlay, gasTable, cache, tx, block, notify)
+		eiptx, err := tx.GetEIP155Tx()
+		if err != nil {
+			return nil, nil, fmt.Errorf("HandleInvokeTransaction tx %s error %s", txHash.ToHexString(), err.Error())
+		}
+
+		err = this.stateStore.HandleEIP155Transaction(this, overlay, cache, eiptx, uint(txIndex), block.Header, notify)
 		if overlay.Error() != nil {
 			return nil, nil, fmt.Errorf("HandleInvokeTransaction tx %s error %s", txHash.ToHexString(), overlay.Error())
 		}
 		if err != nil {
 			log.Debugf("HandleInvokeTransaction tx %s error %s", txHash.ToHexString(), err)
 		}
-		//todo deal with EIP155
 	}
 	return notify, crossStateHashes, nil
 }
@@ -1312,18 +1314,17 @@ func (this *LedgerStoreImp) PreExecuteContractWithParam(tx *types.Transaction, p
 		invoke := tx.Payload.(*payload.EIP155Code)
 
 		sc := smartcontract.SmartContract{
-			Config:       sconfig,
-			Store:        this,
-			CacheDB:      cache,
-			GasTable:     gasTable,
-			Gas:          math.MaxUint64 - calcGasByCodeLen(len(invoke.Code), gasTable[neovm.UINT_INVOKE_CODE_LEN_NAME]),
-			WasmExecStep: config.DEFAULT_WASM_MAX_STEPCOUNT,
+			Config:   sconfig,
+			Store:    this,
+			CacheDB:  cache,
+			GasTable: gasTable,
+			Gas:      math.MaxUint64 - calcGasByCodeLen(len(invoke.EIPTx.Data()), gasTable[neovm.UINT_INVOKE_CODE_LEN_NAME]),
+			//WasmExecStep: config.DEFAULT_WASM_MAX_STEPCOUNT,
 			//JitMode:      preParam.JitMode,
 			PreExec: true,
 		}
-		engine, _ := sc.NewExecuteEngine(invoke.Code, tx.TxType)
-
-		_, err := engine.Invoke()
+		engine, _ := sc.NewExecuteEngine(invoke.EIPTx.Data(), tx.TxType)
+		cv, err := engine.Invoke()
 		if err != nil {
 			return stf, err
 		}
@@ -1337,7 +1338,6 @@ func (this *LedgerStoreImp) PreExecuteContractWithParam(tx *types.Transaction, p
 			gasCost = tuneGasFeeByHeight(sconfig.Height, gasCost, neovm.MIN_TRANSACTION_GAS, math.MaxUint64)
 		}
 
-		cv := "EIP155 Test result"
 		return &sstate.PreExecResult{State: event.CONTRACT_STATE_SUCCESS, Gas: gasCost, Result: cv, Notify: nil}, nil
 
 	} else {
@@ -1408,4 +1408,10 @@ func (this *LedgerStoreImp) maxAllowedPruneHeight(currHeader *types.Header) uint
 		return 0
 	}
 	return lastReferHeight - 1
+}
+
+func (this *LedgerStoreImp) GetCacheDB() *storage.CacheDB {
+	overlay := this.stateStore.NewOverlayDB()
+	return storage.NewCacheDB(overlay)
+
 }

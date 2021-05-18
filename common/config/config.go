@@ -81,6 +81,9 @@ const (
 
 	DEFAULT_DATA_DIR      = "./Chain/"
 	DEFAULT_RESERVED_FILE = "./peers.rsv"
+
+	DEFAULT_ETH_BLOCK_GAS_LIMIT = 8000000
+	N_GAS_LIMIT                 = 10
 )
 
 const (
@@ -616,6 +619,8 @@ type CommonConfig struct {
 	GasLimit         uint64
 	GasPrice         uint64
 	DataDir          string
+	ETHBlockGasLimit uint64
+	NGasLimit        uint64
 	WasmVerifyMethod VerifyMethod
 }
 

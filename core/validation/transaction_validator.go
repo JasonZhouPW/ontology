@@ -21,7 +21,6 @@ package validation
 import (
 	"errors"
 	"fmt"
-
 	"github.com/ontio/ontology/common"
 	"github.com/ontio/ontology/common/config"
 	"github.com/ontio/ontology/common/constants"
@@ -55,6 +54,11 @@ func VerifyTransactionWithLedger(tx *types.Transaction, ledger *ledger.Ledger) o
 }
 
 func checkTransactionSignatures(tx *types.Transaction) error {
+
+	if tx.TxType == types.EIP155 {
+		return tx.VerifyEIP155Tx()
+	}
+
 	hash := tx.Hash()
 
 	lensig := len(tx.Sigs)
@@ -125,6 +129,14 @@ func checkTransactionPayload(tx *types.Transaction) error {
 		}
 		return nil
 	case *payload.InvokeCode:
+		return nil
+	case *payload.EIP155Code:
+		if tx.TxType != types.EIP155 {
+			return fmt.Errorf("not a EIP155 transaction")
+		}
+		if pld.EIPTx.ChainId().Uint64() != uint64(config.DefConfig.P2PNode.EVMChainId) {
+			return fmt.Errorf("chainId is not valide: want:%d , have:%d", config.DefConfig.P2PNode.EVMChainId, pld.EIPTx.ChainId())
+		}
 		return nil
 	default:
 		return errors.New(fmt.Sprint("[txValidator], unimplemented transaction payload type.", pld))
