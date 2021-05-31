@@ -42,7 +42,6 @@ import (
 const (
 	eth65           = 65
 	ProtocolVersion = eth65
-	ChainId         = 5851
 )
 
 type EthereumAPI struct {
@@ -54,7 +53,7 @@ func NewEthereumAPI(txpool *tp.TXPoolServer) EthereumAPI {
 }
 
 func (api *EthereumAPI) ChainId() hexutil.Uint64 {
-	return hexutil.Uint64(ChainId)
+	return hexutil.Uint64(getChainId())
 }
 
 func (api *EthereumAPI) BlockNumber() (hexutil.Uint64, error) {
@@ -260,7 +259,7 @@ func (api *EthereumAPI) GetBlockByNumber(blockNum types2.BlockNumber, fullTx boo
 	return EthBlockFromOntology(block, fullTx), nil
 }
 
-func (api *EthereumAPI) GetTransactionByHash(hash common.Hash) (*types.Transaction, error) {
+func (api *EthereumAPI) GetTransactionByHash(hash common.Hash) (*types2.Transaction, error) {
 	height, tx, err := bactor.GetTxnWithHeightByTxHash(oComm.Uint256(hash))
 	if err != nil {
 		return nil, err
@@ -289,7 +288,7 @@ func (api *EthereumAPI) GetTransactionByHash(hash common.Hash) (*types.Transacti
 	return OntTxToEthTx(*tx, common.Hash(blockHash), uint64(header.Height), uint64(idx))
 }
 
-func (api *EthereumAPI) GetTransactionByBlockHashAndIndex(hash common.Hash, idx hexutil.Uint) (*types.Transaction, error) {
+func (api *EthereumAPI) GetTransactionByBlockHashAndIndex(hash common.Hash, idx hexutil.Uint) (*types2.Transaction, error) {
 	block, err := bactor.GetBlockFromStore(oComm.Uint256(hash))
 	if err != nil {
 		return nil, err
@@ -307,7 +306,7 @@ func (api *EthereumAPI) GetTransactionByBlockHashAndIndex(hash common.Hash, idx 
 	return OntTxToEthTx(*tx, common.Hash(blockHash), uint64(header.Height), uint64(idx))
 }
 
-func (api *EthereumAPI) GetTransactionByBlockNumberAndIndex(blockNum types2.BlockNumber, idx hexutil.Uint) (*types.Transaction, error) {
+func (api *EthereumAPI) GetTransactionByBlockNumberAndIndex(blockNum types2.BlockNumber, idx hexutil.Uint) (*types2.Transaction, error) {
 	height := uint32(blockNum)
 	if blockNum.IsLatest() || blockNum.IsPending() {
 		height = bactor.GetCurrentBlockHeight()
@@ -333,12 +332,36 @@ func (api *EthereumAPI) GetTransactionReceipt(hash common.Hash) (interface{}, er
 	return nil, nil
 }
 
-func (api *EthereumAPI) PendingTransactions() ([]*types.Transaction, error) {
-	return nil, nil
+func (api *EthereumAPI) PendingTransactions() ([]*types2.Transaction, error) {
+	pendingTxs := api.txpool.PendingEIPTransactions()
+	var rpcTxs []*types2.Transaction
+	for _, v1 := range pendingTxs {
+		for _, v2 := range v1 {
+			tx, err := NewTransaction(v2, v2.Hash(), common.Hash{}, 0, 0)
+			if err != nil {
+				return nil, nil
+			}
+			rpcTxs = append(rpcTxs, tx)
+		}
+	}
+	return rpcTxs, nil
 }
 
-func (api *EthereumAPI) PendingTransactionByHash(target common.Hash) (*types2.Transaction, error) {
-	return nil, nil
+func (api *EthereumAPI) PendingTransactionsByHash(target common.Hash) (*types2.Transaction, error) {
+	pendingTxs := api.txpool.PendingEIPTransactions()
+	var ethTx *types.Transaction
+	for _, v1 := range pendingTxs {
+		for _, v2 := range v1 {
+			if bytes.Equal(v2.Hash().Bytes(), target.Bytes()) {
+				ethTx = v2
+				break
+			}
+		}
+	}
+	if ethTx == nil {
+		return nil, fmt.Errorf("tx: %v not found", target.String())
+	}
+	return NewTransaction(ethTx, ethTx.Hash(), common.Hash{}, 0, 0)
 }
 
 func (api *EthereumAPI) GetUncleByBlockHashAndIndex(_ common.Hash, _ hexutil.Uint) map[string]interface{} {

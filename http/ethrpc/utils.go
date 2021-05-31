@@ -21,11 +21,14 @@ import (
 	"math/big"
 	"reflect"
 
+	sysconfig "github.com/ontio/ontology/common/config"
+
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	types2 "github.com/ethereum/go-ethereum/core/types"
 	oComm "github.com/ontio/ontology/common"
 	"github.com/ontio/ontology/core/types"
+	types3 "github.com/ontio/ontology/http/ethrpc/types"
 )
 
 func EthBlockFromOntology(block *types.Block, fullTx bool) map[string]interface{} {
@@ -45,29 +48,29 @@ func EthBlockFromOntology(block *types.Block, fullTx bool) map[string]interface{
 	return FormatBlock(*block, 0, gasUsed, blockTxs)
 }
 
-func EthTransactionsFromOntology(txs []*types.Transaction, blockHash common.Hash, blockNumber uint64) ([]common.Hash, *big.Int, []*types2.Transaction) {
+func EthTransactionsFromOntology(txs []*types.Transaction, blockHash common.Hash, blockNumber uint64) ([]common.Hash, *big.Int, []*types3.Transaction) {
 	var transactionHashes []common.Hash
-	var transactions []*types2.Transaction
+	var transactions []*types3.Transaction
 	gasUsed := big.NewInt(0)
 	for idx, tx := range txs {
 		hash := tx.Hash()
-		ethTx, err := OntTxToEthTx(*tx, blockHash, blockNumber, uint64(idx))
+		rpcTx, err := OntTxToEthTx(*tx, blockHash, blockNumber, uint64(idx))
 		if err != nil {
 			continue
 		}
-		gasUsed.Add(gasUsed, big.NewInt(int64(ethTx.Gas())))
+		gasUsed.Add(gasUsed, big.NewInt(int64(rpcTx.Gas)))
 		transactionHashes = append(transactionHashes, common.BytesToHash(hash.ToArray()))
-		transactions = append(transactions, ethTx)
+		transactions = append(transactions, rpcTx)
 	}
 	return transactionHashes, gasUsed, transactions
 }
 
-func OntTxToEthTx(tx types.Transaction, blockHash common.Hash, blockNumber, index uint64) (*types2.Transaction, error) {
+func OntTxToEthTx(tx types.Transaction, blockHash common.Hash, blockNumber, index uint64) (*types3.Transaction, error) {
 	eip155Tx, err := tx.GetEIP155Tx()
 	if err != nil {
 		return nil, err
 	}
-	return eip155Tx, nil
+	return NewTransaction(eip155Tx, common.Hash(tx.Hash()), blockHash, blockNumber, index)
 }
 
 func FormatBlock(block types.Block, gasLimit uint64, gasUsed *big.Int, transactions interface{}) map[string]interface{} {
@@ -110,4 +113,38 @@ func FormatBlock(block types.Block, gasLimit uint64, gasUsed *big.Int, transacti
 
 func EthToOntAddr(address common.Address) oComm.Address {
 	return oComm.Address(address)
+}
+
+func NewTransaction(tx *types2.Transaction, txHash, blockHash common.Hash, blockNumber, index uint64) (*types3.Transaction, error) {
+	signer := types2.NewEIP155Signer(big.NewInt(int64(getChainId())))
+	from, err := signer.Sender(tx)
+	if err != nil {
+		return nil, err
+	}
+	v, r, s := tx.RawSignatureValues()
+	rpcTx := &types3.Transaction{
+		From:     from,
+		Gas:      hexutil.Uint64(tx.Gas()),
+		GasPrice: (*hexutil.Big)(tx.GasPrice()),
+		Hash:     txHash,
+		Input:    hexutil.Bytes(tx.Data()),
+		Nonce:    hexutil.Uint64(tx.Nonce()),
+		To:       tx.To(),
+		Value:    (*hexutil.Big)(tx.Value()),
+		V:        (*hexutil.Big)(v),
+		R:        (*hexutil.Big)(r),
+		S:        (*hexutil.Big)(s),
+	}
+
+	if blockHash != (common.Hash{}) {
+		rpcTx.BlockHash = &blockHash
+		rpcTx.BlockNumber = (*hexutil.Big)(new(big.Int).SetUint64(blockNumber))
+		rpcTx.TransactionIndex = (*hexutil.Uint64)(&index)
+	}
+
+	return rpcTx, nil
+}
+
+func getChainId() uint32 {
+	return sysconfig.DefConfig.P2PNode.EVMChainId
 }
