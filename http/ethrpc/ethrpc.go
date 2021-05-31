@@ -35,6 +35,8 @@ import (
 	bcomn "github.com/ontio/ontology/http/base/common"
 	hComm "github.com/ontio/ontology/http/base/common"
 	types2 "github.com/ontio/ontology/http/ethrpc/types"
+	"github.com/ontio/ontology/smartcontract/service/native/utils"
+	tp "github.com/ontio/ontology/txnpool/proc"
 )
 
 const (
@@ -44,6 +46,11 @@ const (
 )
 
 type EthereumAPI struct {
+	txpool *tp.TXPoolServer
+}
+
+func NewEthereumAPI(txpool *tp.TXPoolServer) EthereumAPI {
+	return EthereumAPI{txpool: txpool}
 }
 
 func (api *EthereumAPI) ChainId() hexutil.Uint64 {
@@ -51,16 +58,16 @@ func (api *EthereumAPI) ChainId() hexutil.Uint64 {
 }
 
 func (api *EthereumAPI) BlockNumber() (hexutil.Uint64, error) {
-	// height := bactor.GetCurrentBlockHeight()
-	return hexutil.Uint64(1000), nil
+	height := bactor.GetCurrentBlockHeight()
+	return hexutil.Uint64(height), nil
 }
 
 func (api *EthereumAPI) GetBalance(address common.Address, _ rpc.BlockNumberOrHash) (*hexutil.Big, error) {
-	//balances, _, err := hComm.GetContractBalance(0, []oComm.Address{utils.OngContractAddress}, oComm.Address(address), true)
-	//if err != nil {
-	//	return nil, fmt.Errorf("get ong balance error:%s", err)
-	//}
-	return (*hexutil.Big)(big.NewInt(0)), nil
+	balances, _, err := hComm.GetContractBalance(0, []oComm.Address{utils.OngContractAddress}, oComm.Address(address), true)
+	if err != nil {
+		return nil, fmt.Errorf("get ong balance error:%s", err)
+	}
+	return (*hexutil.Big)(big.NewInt(int64(balances[0]))), nil
 }
 
 func (api *EthereumAPI) ProtocolVersion() hexutil.Uint {
@@ -125,11 +132,19 @@ func (api *EthereumAPI) GetStorageAt(address common.Address, key string, blockNu
 	return nil, nil
 }
 
-// TODO
-func (api *EthereumAPI) GetTransactionCount(address common.Address, blockNum int64) (*hexutil.Uint64, error) {
-	nonce := hexutil.Uint64(12321)
-	print("12321")
-	return &nonce, nil
+func (api *EthereumAPI) GetTransactionCount(address common.Address, blockNum types2.BlockNumber) (*hexutil.Uint64, error) {
+	addr := EthToOntAddr(address)
+	if blockNum.IsPending() {
+		nonce := api.txpool.Nonce(addr)
+		n := hexutil.Uint64(nonce)
+		return &n, nil
+	}
+	nonce, err := bactor.GetNonce(addr)
+	if err != nil {
+		return nil, err
+	}
+	n := hexutil.Uint64(nonce)
+	return &n, nil
 }
 
 func (api *EthereumAPI) GetBlockTransactionCountByHash(hash common.Hash) *hexutil.Uint {
@@ -224,6 +239,9 @@ func (api *EthereumAPI) GetBlockByHash(hash common.Hash, fullTx bool) (interface
 	if err != nil {
 		return nil, err
 	}
+	if block == nil {
+		return nil, fmt.Errorf("block: %v not found", hash.String())
+	}
 	return EthBlockFromOntology(block, fullTx), nil
 }
 
@@ -239,30 +257,10 @@ func (api *EthereumAPI) GetBlockByNumber(blockNum types2.BlockNumber, fullTx boo
 	if block == nil {
 		return nil, fmt.Errorf("block: %v not found", blockNum.Int64())
 	}
-	return map[string]interface{}{
-		"number":           hexutil.Uint64(100000),
-		"hash":             hexutil.Bytes{},
-		"parentHash":       hexutil.Bytes{},
-		"nonce":            types.BlockNonce{}, // PoW specific
-		"sha3Uncles":       common.Hash{},      // No uncles in Tendermint
-		"logsBloom":        types2.Bloom{},
-		"transactionsRoot": hexutil.Bytes{},
-		"stateRoot":        hexutil.Bytes{},
-		"miner":            common.Address{},
-		"mixHash":          common.Hash{},
-		"difficulty":       hexutil.Uint64(0),
-		"totalDifficulty":  hexutil.Uint64(0),
-		"extraData":        hexutil.Bytes{},
-		"size":             hexutil.Uint64(0),
-		"gasLimit":         hexutil.Uint64(0), // TODO Static gas limit
-		"gasUsed":          (*hexutil.Big)(big.NewInt(0)),
-		"timestamp":        hexutil.Uint64(0),
-		"uncles":           []string{},
-		"receiptsRoot":     common.Hash{},
-	}, nil
+	return EthBlockFromOntology(block, fullTx), nil
 }
 
-func (api *EthereumAPI) GetTransactionByHash(hash common.Hash) (*types2.Transaction, error) {
+func (api *EthereumAPI) GetTransactionByHash(hash common.Hash) (*types.Transaction, error) {
 	height, tx, err := bactor.GetTxnWithHeightByTxHash(oComm.Uint256(hash))
 	if err != nil {
 		return nil, err
@@ -288,10 +286,10 @@ func (api *EthereumAPI) GetTransactionByHash(hash common.Hash) (*types2.Transact
 			break
 		}
 	}
-	return OntTxToEthTx(*tx, common.Hash(blockHash), uint64(header.Height), uint64(idx)), nil
+	return OntTxToEthTx(*tx, common.Hash(blockHash), uint64(header.Height), uint64(idx))
 }
 
-func (api *EthereumAPI) GetTransactionByBlockHashAndIndex(hash common.Hash, idx hexutil.Uint) (*types2.Transaction, error) {
+func (api *EthereumAPI) GetTransactionByBlockHashAndIndex(hash common.Hash, idx hexutil.Uint) (*types.Transaction, error) {
 	block, err := bactor.GetBlockFromStore(oComm.Uint256(hash))
 	if err != nil {
 		return nil, err
@@ -306,18 +304,36 @@ func (api *EthereumAPI) GetTransactionByBlockHashAndIndex(hash common.Hash, idx 
 		return nil, fmt.Errorf("access block: %v overflow %v", hash.Hex(), idx)
 	}
 	tx := txs[idx]
-	return OntTxToEthTx(*tx, common.Hash(blockHash), uint64(header.Height), uint64(idx)), nil
+	return OntTxToEthTx(*tx, common.Hash(blockHash), uint64(header.Height), uint64(idx))
 }
 
-func (api *EthereumAPI) GetTransactionByBlockNumberAndIndex(blockNum types2.BlockNumber, idx hexutil.Uint) (*types2.Transaction, error) {
-	return nil, nil
+func (api *EthereumAPI) GetTransactionByBlockNumberAndIndex(blockNum types2.BlockNumber, idx hexutil.Uint) (*types.Transaction, error) {
+	height := uint32(blockNum)
+	if blockNum.IsLatest() || blockNum.IsPending() {
+		height = bactor.GetCurrentBlockHeight()
+	}
+	block, err := bactor.GetBlockByHeight(height)
+	if err != nil {
+		return nil, err
+	}
+	if block == nil {
+		return nil, fmt.Errorf("block: %v not found", height)
+	}
+	header := block.Header
+	blockHash := header.Hash()
+	txs := block.Transactions
+	if len(txs) >= int(idx) {
+		return nil, fmt.Errorf("access block: %v overflow %v", height, idx)
+	}
+	tx := txs[idx]
+	return OntTxToEthTx(*tx, common.Hash(blockHash), uint64(header.Height), uint64(idx))
 }
 
 func (api *EthereumAPI) GetTransactionReceipt(hash common.Hash) (interface{}, error) {
 	return nil, nil
 }
 
-func (api *EthereumAPI) PendingTransactions() ([]*types2.Transaction, error) {
+func (api *EthereumAPI) PendingTransactions() ([]*types.Transaction, error) {
 	return nil, nil
 }
 
