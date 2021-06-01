@@ -187,7 +187,7 @@ func Test_higherNonce(t *testing.T) {
 	assert.True(t, tmptx.GasPrice == 3000 && tmptx.Nonce == 0)
 
 	time.Sleep(10 * time.Second)
-	txEntry1:= &tc.TXEntry{
+	txEntry1 := &tc.TXEntry{
 		Tx:    otx1,
 		Attrs: []*tc.TXAttr{},
 	}
@@ -198,7 +198,7 @@ func Test_higherNonce(t *testing.T) {
 	assert.True(t, tmptx1.GasPrice == 2500)
 
 	time.Sleep(10 * time.Second)
-	txEntry2:= &tc.TXEntry{
+	txEntry2 := &tc.TXEntry{
 		Tx:    otx2,
 		Attrs: []*tc.TXAttr{},
 	}
@@ -209,7 +209,7 @@ func Test_higherNonce(t *testing.T) {
 	assert.True(t, tmptx2.GasPrice == 2500)
 
 	time.Sleep(10 * time.Second)
-	txEntry3:= &tc.TXEntry{
+	txEntry3 := &tc.TXEntry{
 		Tx:    otx3,
 		Attrs: []*tc.TXAttr{},
 	}
@@ -218,7 +218,7 @@ func Test_higherNonce(t *testing.T) {
 	assert.True(t, f)
 	tmptx3 := s.eipTxPool[otx1.Payer].txs.Get(0)
 	assert.True(t, tmptx3.GasPrice == 3000)
-	assert.Nil(t,s.txPool.GetTransaction(otx1.Hash()))
+	assert.Nil(t, s.txPool.GetTransaction(otx1.Hash()))
 }
 
 func Test_TxActor(t *testing.T) {
