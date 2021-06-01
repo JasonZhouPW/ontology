@@ -22,18 +22,18 @@ import (
 	"crypto/sha256"
 	"errors"
 	"fmt"
-	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/crypto"
-	"github.com/ethereum/go-ethereum/rlp"
-	"github.com/ontio/ontology/common/log"
 	"io"
 	"math"
 	"math/big"
 
+	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/crypto"
+	"github.com/ethereum/go-ethereum/rlp"
 	"github.com/ontio/ontology-crypto/keypair"
 	"github.com/ontio/ontology/common"
 	sysconfig "github.com/ontio/ontology/common/config"
 	"github.com/ontio/ontology/common/constants"
+	"github.com/ontio/ontology/common/log"
 	"github.com/ontio/ontology/core/payload"
 	"github.com/ontio/ontology/core/program"
 )
@@ -76,11 +76,7 @@ func TransactionFromRawBytes(raw []byte) (*Transaction, error) {
 }
 
 func TransactionFromEIP155(eiptx *types.Transaction) (*Transaction, error) {
-
 	evmChainId := sysconfig.DefConfig.P2PNode.EVMChainId
-	if eiptx.ChainId().Cmp(big.NewInt(int64(evmChainId))) != 0 {
-		return nil, fmt.Errorf("not a acceptable chainId:%d", eiptx.ChainId())
-	}
 
 	signer := types.NewEIP155Signer(big.NewInt(int64(evmChainId)))
 	from, err := signer.Sender(eiptx)
@@ -88,42 +84,31 @@ func TransactionFromEIP155(eiptx *types.Transaction) (*Transaction, error) {
 		return nil, fmt.Errorf("error EIP155 get sender:%s", err.Error())
 	}
 
-	addr, err := common.AddressParseFromBytes(from[:])
-	if err != nil {
-		return nil, fmt.Errorf("error EIP155 parse sender address:%s", err.Error())
-	}
-	eiphash := eiptx.Hash()
-	txhash, err := common.Uint256ParseFromBytes(eiphash[:])
-	if err != nil {
-		return nil, fmt.Errorf("error EIP155 parse txhash:%s", err.Error())
-	}
-	raw, err := rlp.EncodeToBytes(eiptx)
-	if err != nil {
-		return nil, fmt.Errorf("error EIP155 EncodeToBytes %s", err.Error())
-	}
+	addr := common.Address(from)
 
-	if eiptx.Nonce() > uint64(math.MaxUint32) ||
-		eiptx.GasPrice().Cmp(big.NewInt(0).SetUint64(math.MaxUint64)) > 0 {
+	if eiptx.Nonce() > uint64(math.MaxUint32) || !eiptx.GasPrice().IsUint64() {
 		return nil, fmt.Errorf("nonce :%d or GasPrice :%d is too big", eiptx.Nonce(), eiptx.GasPrice())
 	}
 
 	retTx := &Transaction{
-		Version:  byte(0),
-		TxType:   EIP155,
-		Nonce:    uint32(eiptx.Nonce()),
-		GasPrice: eiptx.GasPrice().Uint64(),
-		GasLimit: eiptx.Gas(),
-		Payer:    addr,
-		Payload:  &payload.EIP155Code{EIPTx: eiptx},
-		//Sigs: ???
-		Raw:                  raw,
-		hashUnsigned:         common.Uint256{},
-		hash:                 txhash,
+		Version:              byte(0),
+		TxType:               EIP155,
+		Nonce:                uint32(eiptx.Nonce()),
+		GasPrice:             eiptx.GasPrice().Uint64(),
+		GasLimit:             eiptx.Gas(),
+		Payer:                addr,
+		Payload:              &payload.EIP155Code{EIPTx: eiptx},
+		hashUnsigned:         common.Uint256(signer.Hash(eiptx)),
+		hash:                 common.Uint256(eiptx.Hash()),
 		SignedAddr:           []common.Address{addr},
 		nonDirectConstracted: true,
 	}
 
 	//raw = version + txtype + rlp(ethtx)
+	raw, err := rlp.EncodeToBytes(eiptx)
+	if err != nil {
+		return nil, fmt.Errorf("error EIP155 EncodeToBytes %s", err.Error())
+	}
 	sink := new(common.ZeroCopySink)
 	sink.WriteByte(retTx.Version)
 	sink.WriteByte(byte(retTx.TxType))
@@ -200,11 +185,55 @@ func deriveChainId(v *big.Int) *big.Int {
 	return v.Div(v, big.NewInt(2))
 }
 
+func isEip155TxBytes(source *common.ZeroCopySource) bool {
+	prefix, eof := source.NextBytes(2)
+	if eof {
+		return false
+	}
+	source.BackUp(2)
+	return TransactionType(prefix[1]) == EIP155
+}
+
+func (tx *Transaction) decodeEip155(source *common.ZeroCopySource) error {
+	pstart := source.Pos()
+	tx.Version, _ = source.NextByte()
+	txtype, eof := source.NextByte()
+	if eof {
+		return io.ErrUnexpectedEOF
+	}
+	tx.TxType = TransactionType(txtype)
+	if tx.TxType != EIP155 {
+		return fmt.Errorf("unreachable code path")
+	}
+
+	pl := new(payload.EIP155Code)
+	err := pl.Deserialization(source)
+	if err != nil {
+		return err
+	}
+	decoded, err := TransactionFromEIP155(pl.EIPTx)
+	if err != nil {
+		return err
+	}
+	*tx = *decoded
+
+	pend := source.Pos()
+	lenAll := pend - pstart
+	if lenAll > MAX_TX_SIZE {
+		return fmt.Errorf("execced max transaction size:%d", lenAll)
+	}
+
+	return nil
+}
+
 // Transaction has internal reference of param `source`
 func (tx *Transaction) Deserialization(source *common.ZeroCopySource) error {
+	if isEip155TxBytes(source) {
+		return tx.decodeEip155(source)
+	}
 
 	pstart := source.Pos()
-	err := tx.deserializationUnsigned(source)
+	err := tx.deserializeOntUnsigned(source)
 	if err != nil {
 		return err
 	}
@@ -214,40 +243,25 @@ func (tx *Transaction) Deserialization(source *common.ZeroCopySource) error {
 	rawUnsigned, _ := source.NextBytes(lenUnsigned)
 
 	tx.hashUnsigned = sha256.Sum256(rawUnsigned)
-	//todo deal with EIP155 tx hash
-	if tx.TxType == EIP155 {
-		eiptx := tx.Payload.(*payload.EIP155Code).EIPTx
-		eiphash := eiptx.Hash()
-		tx.hash, err = common.Uint256ParseFromBytes(eiphash[:])
-		if err != nil {
-			return fmt.Errorf("error EIP155 parse txhash:%s", err.Error())
-		}
-	} else {
-		tx.hash = sha256.Sum256(tx.hashUnsigned[:])
+	tx.hash = sha256.Sum256(tx.hashUnsigned[:])
+
+	// tx sigs
+	length, err := source.ReadVarUint()
+	if err != nil {
+		return err
+	}
+	if length > constants.TX_MAX_SIG_SIZE {
+		return fmt.Errorf("transaction signature number %d execced %d", length, constants.TX_MAX_SIG_SIZE)
 	}
 
-	if tx.TxType != EIP155 {
-		// tx sigs
-		length, _, irregular, eof := source.NextVarUint()
-		if irregular {
-			return common.ErrIrregularData
-		}
-		if eof {
-			return io.ErrUnexpectedEOF
-		}
-		if length > constants.TX_MAX_SIG_SIZE {
-			return fmt.Errorf("transaction signature number %d execced %d", length, constants.TX_MAX_SIG_SIZE)
+	for i := 0; i < int(length); i++ {
+		var sig RawSig
+		err := sig.Deserialization(source)
+		if err != nil {
+			return err
 		}
 
-		for i := 0; i < int(length); i++ {
-			var sig RawSig
-			err := sig.Deserialization(source)
-			if err != nil {
-				return err
-			}
-
-			tx.Sigs = append(tx.Sigs, sig)
-		}
+		tx.Sigs = append(tx.Sigs, sig)
 	}
 	pend := source.Pos()
 	lenAll := pend - pstart
@@ -303,7 +317,7 @@ func (tx *Transaction) IntoMutable() (*MutableTransaction, error) {
 	return mutable, nil
 }
 
-func (tx *Transaction) deserializationUnsigned(source *common.ZeroCopySource) error {
+func (tx *Transaction) deserializeOntUnsigned(source *common.ZeroCopySource) error {
 	var irregular, eof bool
 	tx.Version, eof = source.NextByte()
 	if eof {
@@ -316,26 +330,27 @@ func (tx *Transaction) deserializationUnsigned(source *common.ZeroCopySource) er
 	}
 	tx.TxType = TransactionType(txtype)
 
-	if tx.TxType != EIP155 {
-		tx.Nonce, eof = source.NextUint32()
-		if eof {
-			return io.ErrUnexpectedEOF
-		}
-		tx.GasPrice, eof = source.NextUint64()
-		if eof {
-			return io.ErrUnexpectedEOF
-		}
-		tx.GasLimit, eof = source.NextUint64()
-		if eof {
-			return io.ErrUnexpectedEOF
-		}
-		var buf []byte
-		buf, eof = source.NextBytes(common.ADDR_LEN)
-		if eof {
-			return io.ErrUnexpectedEOF
-		}
-		copy(tx.Payer[:], buf)
+	if tx.TxType == EIP155 {
+		return fmt.Errorf("unreachable code path")
 	}
+	tx.Nonce, eof = source.NextUint32()
+	if eof {
+		return io.ErrUnexpectedEOF
+	}
+	tx.GasPrice, eof = source.NextUint64()
+	if eof {
+		return io.ErrUnexpectedEOF
+	}
+	tx.GasLimit, eof = source.NextUint64()
+	if eof {
+		return io.ErrUnexpectedEOF
+	}
+	var buf []byte
+	buf, eof = source.NextBytes(common.ADDR_LEN)
+	if eof {
+		return io.ErrUnexpectedEOF
+	}
+	copy(tx.Payer[:], buf)
 
 	switch tx.TxType {
 	case InvokeNeo, InvokeWasm:
@@ -352,36 +367,6 @@ func (tx *Transaction) deserializationUnsigned(source *common.ZeroCopySource) er
 			return err
 		}
 		tx.Payload = pl
-	case EIP155:
-		pl := new(payload.EIP155Code)
-		err := pl.Deserialization(source)
-		if err != nil {
-			return err
-		}
-		tx.Payload = pl
-		tx.Nonce = uint32(pl.EIPTx.Nonce())
-		if pl.EIPTx.GasPrice().Cmp(big.NewInt(0).SetUint64(math.MaxUint64)) > 0 {
-			return fmt.Errorf("gas price is exceeded max uint64")
-		}
-		tx.GasPrice = pl.EIPTx.GasPrice().Uint64()
-		tx.GasLimit = pl.EIPTx.Gas()
-
-		signer := types.NewEIP155Signer(big.NewInt(int64(sysconfig.DefConfig.P2PNode.EVMChainId)))
-		from, err := signer.Sender(pl.EIPTx)
-		if err != nil {
-			return fmt.Errorf("error EIP155 get sender:%s", err.Error())
-		}
-		ontAddr, err := common.AddressParseFromBytes(from[:])
-		if err != nil {
-			return fmt.Errorf("error EIP155 get sender:%s", err.Error())
-		}
-		tx.Payer = ontAddr
-		if pl.EIPTx.Nonce() > uint64(math.MaxUint32) {
-			return fmt.Errorf("nonce is exceeded max uint64")
-		}
-		tx.Nonce = uint32(pl.EIPTx.Nonce())
-		return nil
-
 	default:
 		return fmt.Errorf("unsupported tx type %v", tx.TxType)
 	}
@@ -543,6 +528,15 @@ func (tx *Transaction) Hash() common.Uint256 {
 // calculate a hash for another chain to sign.
 // and take the chain id of ontology as 0.
 func (tx *Transaction) SigHashForChain(id uint32) common.Uint256 {
+	if tx.TxType == EIP155 {
+		eiptx, err := tx.GetEIP155Tx()
+		if err != nil {
+			panic(err)
+		}
+		signer := types.NewEIP155Signer(big.NewInt(int64(id)))
+		return common.Uint256(signer.Hash(eiptx))
+	}
+
 	sink := common.NewZeroCopySink(nil)
 	sink.WriteHash(tx.hashUnsigned)
 	if id != 0 {
