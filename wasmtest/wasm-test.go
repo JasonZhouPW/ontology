@@ -24,12 +24,6 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"github.com/ethereum/go-ethereum/accounts/abi"
-	"github.com/ethereum/go-ethereum/accounts/abi/bind"
-	common4 "github.com/ethereum/go-ethereum/common"
-	types2 "github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/crypto"
-	"github.com/ontio/ontology/smartcontract/service/evm"
 	"io/ioutil"
 	"math/big"
 	"os"
@@ -39,6 +33,13 @@ import (
 	"runtime"
 	"sort"
 	"strings"
+
+	"github.com/ethereum/go-ethereum/accounts/abi"
+	"github.com/ethereum/go-ethereum/accounts/abi/bind"
+	common4 "github.com/ethereum/go-ethereum/common"
+	types2 "github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/crypto"
+	"github.com/ontio/ontology/smartcontract/service/evm"
 
 	"github.com/ontio/ontology-crypto/keypair"
 	"github.com/ontio/ontology/account"
@@ -64,7 +65,7 @@ import (
 	"github.com/ontio/wagon/wasm"
 )
 
-const contractDir = "/Users/sss/gopath/src/github.com/ontio/ontology/wasmtest/test-contract"
+const contractDir = "./test-contract"
 const testcaseMethod = "testcase"
 const WingABI = "[{\"inputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"constructor\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"owner\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"spender\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"value\",\"type\":\"uint256\"}],\"name\":\"Approval\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"previousOwner\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"newOwner\",\"type\":\"address\"}],\"name\":\"OwnershipTransferred\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"from\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"to\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"value\",\"type\":\"uint256\"}],\"name\":\"Transfer\",\"type\":\"event\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"owner\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"spender\",\"type\":\"address\"}],\"name\":\"allowance\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"spender\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"}],\"name\":\"approve\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"account\",\"type\":\"address\"}],\"name\":\"balanceOf\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"spender\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"subtractedValue\",\"type\":\"uint256\"}],\"name\":\"decreaseAllowance\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"spender\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"addedValue\",\"type\":\"uint256\"}],\"name\":\"increaseAllowance\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"name\",\"outputs\":[{\"internalType\":\"string\",\"name\":\"\",\"type\":\"string\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"owner\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"renounceOwnership\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"symbol\",\"outputs\":[{\"internalType\":\"string\",\"name\":\"\",\"type\":\"string\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"totalSupply\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"recipient\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"}],\"name\":\"transfer\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"sender\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"recipient\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"}],\"name\":\"transferFrom\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"newOwner\",\"type\":\"address\"}],\"name\":\"transferOwnership\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"decimals\",\"outputs\":[{\"internalType\":\"uint8\",\"name\":\"\",\"type\":\"uint8\"}],\"stateMutability\":\"pure\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"to\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"}],\"name\":\"mint\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"}],\"name\":\"burn\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"}]"
 
@@ -96,16 +97,16 @@ func NewDeployNeoContract(signer *account.Account, code []byte) (*types.Transact
 	return tx, err
 }
 
-func NewDeployEvmContract(testPrivateKey *ecdsa.PrivateKey, code []byte) (*types2.Transaction, error) {
+func NewDeployEvmContract(testPrivateKey *ecdsa.PrivateKey, code []byte, jsonABI string, params ...interface{}) (*types2.Transaction, error) {
 	chainId := big.NewInt(0)
 	opts, err := bind.NewKeyedTransactorWithChainID(testPrivateKey, chainId)
 	opts.GasPrice = big.NewInt(0)
 	opts.Nonce = big.NewInt(0)
 
 	checkErr(err)
-	parsed, err := abi.JSON(strings.NewReader(WingABI))
+	parsed, err := abi.JSON(strings.NewReader(jsonABI))
 	checkErr(err)
-	input, err := parsed.Pack("")
+	input, err := parsed.Pack("", params...)
 	checkErr(err)
 	input = append(code, input...)
 	deployTx := types2.NewContractCreation(opts.Nonce.Uint64(), opts.Value, opts.GasLimit, opts.GasPrice, input)
@@ -343,14 +344,13 @@ func main() {
 		file := item.File
 		cont := item.Contract
 		var tx *types.Transaction
-		var ethtx *types2.Transaction
 		var err error
 		if strings.HasSuffix(file, ".wasm") {
 			tx, err = NewDeployWasmContract(acct, cont)
 		} else if strings.HasSuffix(file, ".avm") {
 			tx, err = NewDeployNeoContract(acct, cont)
 		} else if strings.HasSuffix(file, ".evm") {
-			ethtx, err = NewDeployEvmContract(testPrivateKey, cont)
+			ethtx, err := NewDeployEvmContract(testPrivateKey, cont, WingABI)
 			checkErr(err)
 			tx, err = types.TransactionFromEIP155(ethtx)
 			checkErr(err)
@@ -359,7 +359,7 @@ func main() {
 		}
 		checkErr(err)
 		res, err := database.PreExecuteContract(tx)
-		log.Infof("deploy %s consume gas: %d", file, res.Gas)
+		log.Infof("deploy %s consume gas: %d, %s", file, res.Gas, JsonString(res))
 		checkErr(err)
 		txes = append(txes, tx)
 	}
@@ -575,6 +575,7 @@ func bridgeInit(admin common.Address, bridge, wingOep4, wingErc20 common3.ConAdd
 	res, err = database.PreExecuteContract(tx)
 	checkErr(err)
 	r := res.Result.(*evm.ExecutionResult)
+	log.Infof("execute: %v", JsonString(r))
 	fmt.Println(big.NewInt(0).SetBytes(r.ReturnData).String())
 
 	// wingErc20 balanceOf
@@ -699,4 +700,11 @@ func assertEq(a interface{}, b interface{}) {
 	if reflect.DeepEqual(a, b) == false {
 		panic(fmt.Sprintf("not equal: a= %v, b=%v", a, b))
 	}
+}
+
+func JsonString(v interface{}) string {
+	buf, err := json.MarshalIndent(v, "", "  ")
+	checkErr(err)
+
+	return string(buf)
 }
