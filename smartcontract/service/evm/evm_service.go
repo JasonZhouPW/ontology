@@ -57,7 +57,10 @@ func (this *EvmService) Invoke() (interface{}, error) {
 	if err != nil {
 		return nil, err
 	}
-	res, _, err := ApplyTransaction(config, this.Store, statedb, block.Header, eiptx, &usedGas, utils.GovernanceContractAddress, evm.Config{})
+	//result, receipt, err := evm2.ApplyTransaction(config, store, statedb, ctx.Height, ctx.Timestamp, tx, &usedGas,
+	//	utils.GovernanceContractAddress, evm.Config{})
+
+	res, _, err := ApplyTransaction(config, this.Store, statedb,block.Header.Height,block.Header.Timestamp, eiptx, &usedGas, utils.GovernanceContractAddress, evm.Config{})
 	this.ContextRef.CheckUseGas(usedGas)
 
 	return res, err
