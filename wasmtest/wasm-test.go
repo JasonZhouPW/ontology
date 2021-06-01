@@ -20,10 +20,18 @@ package main
 
 import (
 	"bytes"
+	"crypto/ecdsa"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"github.com/ethereum/go-ethereum/accounts/abi"
+	"github.com/ethereum/go-ethereum/accounts/abi/bind"
+	common4 "github.com/ethereum/go-ethereum/common"
+	types2 "github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/crypto"
+	"github.com/ontio/ontology/smartcontract/service/evm"
 	"io/ioutil"
+	"math/big"
 	"os"
 	"path"
 	"path/filepath"
@@ -56,8 +64,9 @@ import (
 	"github.com/ontio/wagon/wasm"
 )
 
-const contractDir = "testwasmdata"
+const contractDir = "/Users/sss/gopath/src/github.com/ontio/ontology/wasmtest/test-contract"
 const testcaseMethod = "testcase"
+const WingABI = "[{\"inputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"constructor\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"owner\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"spender\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"value\",\"type\":\"uint256\"}],\"name\":\"Approval\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"previousOwner\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"newOwner\",\"type\":\"address\"}],\"name\":\"OwnershipTransferred\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"from\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"to\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"value\",\"type\":\"uint256\"}],\"name\":\"Transfer\",\"type\":\"event\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"owner\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"spender\",\"type\":\"address\"}],\"name\":\"allowance\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"spender\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"}],\"name\":\"approve\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"account\",\"type\":\"address\"}],\"name\":\"balanceOf\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"spender\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"subtractedValue\",\"type\":\"uint256\"}],\"name\":\"decreaseAllowance\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"spender\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"addedValue\",\"type\":\"uint256\"}],\"name\":\"increaseAllowance\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"name\",\"outputs\":[{\"internalType\":\"string\",\"name\":\"\",\"type\":\"string\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"owner\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"renounceOwnership\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"symbol\",\"outputs\":[{\"internalType\":\"string\",\"name\":\"\",\"type\":\"string\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"totalSupply\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"recipient\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"}],\"name\":\"transfer\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"sender\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"recipient\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"}],\"name\":\"transferFrom\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"newOwner\",\"type\":\"address\"}],\"name\":\"transferOwnership\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"decimals\",\"outputs\":[{\"internalType\":\"uint8\",\"name\":\"\",\"type\":\"uint8\"}],\"stateMutability\":\"pure\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"to\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"}],\"name\":\"mint\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"}],\"name\":\"burn\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"}]"
 
 func NewDeployWasmContract(signer *account.Account, code []byte) (*types.Transaction, error) {
 	mutable, err := utils.NewDeployCodeTransaction(0, 100000000, code, payload.WASMVM_TYPE, "name", "version",
@@ -85,6 +94,24 @@ func NewDeployNeoContract(signer *account.Account, code []byte) (*types.Transact
 	}
 	tx, err := mutable.IntoImmutable()
 	return tx, err
+}
+
+func NewDeployEvmContract(testPrivateKey *ecdsa.PrivateKey, code []byte) (*types2.Transaction, error) {
+	chainId := big.NewInt(0)
+	opts, err := bind.NewKeyedTransactorWithChainID(testPrivateKey, chainId)
+	opts.GasPrice = big.NewInt(0)
+	opts.Nonce = big.NewInt(0)
+
+	checkErr(err)
+	parsed, err := abi.JSON(strings.NewReader(WingABI))
+	checkErr(err)
+	input, err := parsed.Pack("")
+	checkErr(err)
+	input = append(code, input...)
+	deployTx := types2.NewContractCreation(opts.Nonce.Uint64(), opts.Value, opts.GasLimit, opts.GasPrice, input)
+	signedTx, err := opts.Signer(opts.From, deployTx)
+	checkErr(err)
+	return signedTx, err
 }
 
 func GenNeoTextCaseTransaction(contract common.Address, database *ledger.Ledger) [][]common3.TestCase {
@@ -181,16 +208,18 @@ func LoadContracts(dir string) ([]Item, error) {
 	sort.Strings(fnames)
 
 	for _, name := range fnames {
-		if !(strings.HasSuffix(name, ".wasm") || strings.HasSuffix(name, ".avm")) {
+		if !(strings.HasSuffix(name, ".wasm") || strings.HasSuffix(name, ".avm") ||
+			strings.HasSuffix(name, ".evm")) {
 			continue
 		}
 		raw, err := ioutil.ReadFile(name)
 		if err != nil {
 			return nil, err
 		}
+		code, _ := hex.DecodeString(string(raw))
 		con := Item{
 			File:     path.Base(name),
-			Contract: raw,
+			Contract: code,
 		}
 		contracts = append(contracts, con)
 	}
@@ -262,7 +291,11 @@ func execTxCheckRes(tx *types.Transaction, testCase common3.TestCase, database *
 	block, _ := makeBlock(acct, []*types.Transaction{tx})
 	err = database.AddBlock(block, nil, common.UINT256_EMPTY)
 	checkErr(err)
+	fmt.Println("execTxCheckRes success ", testCase.Method)
 }
+
+var testPrivateKey *ecdsa.PrivateKey
+var testEthAddr common4.Address
 
 func main() {
 	datadir := "testdata"
@@ -298,21 +331,33 @@ func main() {
 	contract, err := LoadContracts(contractDir)
 	checkErr(err)
 
+	testPrivateKeyStr := "59c6995e998f97a5a0044966f0945389dc9e86dae88c7a8412f4603b6b78690d"
+
+	testPrivateKey, err = crypto.HexToECDSA(testPrivateKeyStr)
+	checkErr(err)
+	testEthAddr = crypto.PubkeyToAddress(testPrivateKey.PublicKey)
+
 	log.Infof("deploying %d wasm contracts", len(contract))
 	txes := make([]*types.Transaction, 0, len(contract))
 	for _, item := range contract {
 		file := item.File
 		cont := item.Contract
 		var tx *types.Transaction
+		var ethtx *types2.Transaction
 		var err error
 		if strings.HasSuffix(file, ".wasm") {
 			tx, err = NewDeployWasmContract(acct, cont)
 		} else if strings.HasSuffix(file, ".avm") {
 			tx, err = NewDeployNeoContract(acct, cont)
+		} else if strings.HasSuffix(file, ".evm") {
+			ethtx, err = NewDeployEvmContract(testPrivateKey, cont)
+			checkErr(err)
+			tx, err = types.TransactionFromEIP155(ethtx)
+			checkErr(err)
+			_, err = tx.GetEIP155Tx()
+			checkErr(err)
 		}
-
 		checkErr(err)
-
 		res, err := database.PreExecuteContract(tx)
 		log.Infof("deploy %s consume gas: %d", file, res.Gas)
 		checkErr(err)
@@ -323,23 +368,57 @@ func main() {
 	err = database.AddBlock(block, nil, common.UINT256_EMPTY)
 	checkErr(err)
 
+	keyAddr := crypto.PubkeyToAddress(testPrivateKey.PublicKey)
+
 	addrMap := make([]common3.ConAddr, 0)
+	var bridge common3.ConAddr
+	var wingErc20 common3.ConAddr
+	var wingOep4 common3.ConAddr
 	for _, item := range contract {
 		file := item.File
 		code := item.Contract
-		conaddr := common3.ConAddr{
-			File:    file,
-			Address: common.AddressFromVmCode(code),
+		if strings.HasSuffix(file, ".evm") {
+			ethAddr := crypto.CreateAddress(keyAddr, 0)
+			addr, _ := common.AddressParseFromBytes(ethAddr.Bytes())
+			wingErc20 = common3.ConAddr{
+				File:    file,
+				Address: addr,
+			}
+			fmt.Println("wingErc20 token address:", addr.ToHexString())
+			addrMap = append(addrMap, wingErc20)
+		} else {
+			if strings.HasSuffix(file, "bridge.avm") {
+				bridge = common3.ConAddr{
+					File:    file,
+					Address: common.AddressFromVmCode(code),
+				}
+				fmt.Println("bridge address:", bridge.Address.ToHexString())
+				addrMap = append(addrMap, bridge)
+			} else if strings.HasSuffix(file, "WingToken.avm") {
+				wingOep4 = common3.ConAddr{
+					File:    file,
+					Address: common.AddressFromVmCode(code),
+				}
+				fmt.Println("wingOep4 address:", wingOep4.Address.ToHexString())
+				addrMap = append(addrMap, wingOep4)
+			}
 		}
-
-		addrMap = append(addrMap, conaddr)
+		//addrMap = append(addrMap, conaddr)
 	}
 
+	// 调用 bridge init 方法
+	admin, _ := common.AddressFromBase58("ARGK44mXXZfU6vcdSfFKMzjaabWxyog1qb")
+	bridgeInit(admin, bridge, wingOep4, wingErc20, database, acct)
+
+	// oep4 to erc20
+	addr, _ := common.AddressParseFromBytes(keyAddr.Bytes())
+	oep4ToErc20(admin, bridge, addr, database, acct, addrMap)
+
+	return
 	testContext := common3.TestContext{
-		Admin:   acct.Address,
-		AddrMap: addrMap,
+		Admin:   admin,
+		AddrMap: nil,
 	}
-
 	for _, item := range contract {
 		file := item.File
 		cont := item.Contract
@@ -426,6 +505,103 @@ func checkExecResult(testCase common3.TestCase, result *states.PreExecResult, ex
 			assertEq(true, strings.Contains(string(js), testCase.Notify))
 		}
 	}
+}
+
+func oep4ToErc20(admin common.Address, bridge common3.ConAddr, ethAcct common.Address, database *ledger.Ledger, acct *account.Account, addrMap []common3.ConAddr) {
+	param := fmt.Sprintf("[address:%s,address:%s,int:1000]", admin.ToBase58(), ethAcct.ToBase58())
+	testContext := common3.TestContext{
+		Admin:   admin,
+		AddrMap: addrMap,
+	}
+
+	tc := common3.TestCase{
+		Env: common3.TestEnv{
+			Witness: []common.Address{admin},
+		},
+		NeedContext: true,
+		Method:      "oep4ToErc202",
+		Param:       param,
+		Expect:      "bool:true",
+	}
+	tx, err := common3.GenNeoVMTransaction(tc, bridge.Address, &testContext)
+	checkErr(err)
+
+	execTxCheckRes(tx, tc, database, bridge.Address, acct)
+}
+
+func bridgeInit(admin common.Address, bridge, wingOep4, wingErc20 common3.ConAddr, database *ledger.Ledger, acct *account.Account) {
+	//wing oep4 init
+	param := "int:1"
+	testContext := common3.TestContext{
+		Admin:   admin,
+		AddrMap: nil,
+	}
+	te := common3.TestEnv{Witness: []common.Address{admin, acct.Address}}
+	tc := common3.NewTestCase(te, false, "init", param, "bool:true", "")
+	tx, err := common3.GenNeoVMTransaction(tc, wingOep4.Address, &testContext)
+	checkErr(err)
+	execTxCheckRes(tx, tc, database, wingOep4.Address, acct)
+
+	// oep4 balanceOf
+	tc = common3.NewTestCase(common3.TestEnv{}, false, "balanceOf", fmt.Sprintf("[address:%s]", admin.ToBase58()), "int:1000000000000000", "")
+	tx, err = common3.GenNeoVMTransaction(tc, wingOep4.Address, &testContext)
+	checkErr(err)
+	res, err := database.PreExecuteContract(tx)
+	checkErr(err)
+	data := res.Result.(string)
+	d, _ := hex.DecodeString(data)
+	if common.BigIntFromNeoBytes(d).Cmp(big.NewInt(1000000000000000)) != 0 {
+		panic(common.BigIntFromNeoBytes(d).String())
+	}
+
+	// bridge init
+	param = fmt.Sprintf("[address:%s,address:%s]", wingOep4.Address.ToBase58(), wingErc20.Address.ToBase58())
+	tc = common3.NewTestCase(te, false, "init", param, "bool:true", "")
+	tx, err = common3.GenNeoVMTransaction(tc, bridge.Address, &testContext)
+	checkErr(err)
+	execTxCheckRes(tx, tc, database, bridge.Address, acct)
+
+	// bridge get_ont_address
+	tc = common3.NewTestCase(te, false, "get_ont_address", "int:1", "address:"+wingOep4.Address.ToBase58(), "")
+	tx, err = common3.GenNeoVMTransaction(tc, bridge.Address, &testContext)
+	checkErr(err)
+	execTxCheckRes(tx, tc, database, bridge.Address, acct)
+
+	// wing erc20 totalSupply
+	evmTx, err := GenEVMTx(common4.BytesToAddress(wingErc20.Address[:]), "totalSupply")
+	checkErr(err)
+	tx, err = types.TransactionFromEIP155(evmTx)
+	checkErr(err)
+	res, err = database.PreExecuteContract(tx)
+	checkErr(err)
+	r := res.Result.(*evm.ExecutionResult)
+	fmt.Println(big.NewInt(0).SetBytes(r.ReturnData).String())
+
+	// wingErc20 balanceOf
+	evmTx, err = GenEVMTx(common4.BytesToAddress(wingErc20.Address[:]), "balanceOf", testEthAddr)
+	checkErr(err)
+	tx, err = types.TransactionFromEIP155(evmTx)
+	checkErr(err)
+	res, err = database.PreExecuteContract(tx)
+	checkErr(err)
+	r = res.Result.(*evm.ExecutionResult)
+	fmt.Println(big.NewInt(0).SetBytes(r.ReturnData).String())
+}
+
+func GenEVMTx(contractAddr common4.Address, method string, params ...interface{}) (*types2.Transaction, error) {
+	chainId := big.NewInt(0)
+	opts, err := bind.NewKeyedTransactorWithChainID(testPrivateKey, chainId)
+	opts.GasPrice = big.NewInt(0)
+	opts.Nonce = big.NewInt(0)
+
+	checkErr(err)
+	parsed, err := abi.JSON(strings.NewReader(WingABI))
+	checkErr(err)
+	input, err := parsed.Pack(method, params...)
+	deployTx := types2.NewTransaction(opts.Nonce.Uint64(), contractAddr, opts.Value, opts.GasLimit, opts.GasPrice, input)
+	signedTx, err := opts.Signer(opts.From, deployTx)
+	checkErr(err)
+	return signedTx, err
 }
 
 func buildNeoVmValueFromExpect(expectlist []interface{}) *vmtypes.VmValue {
