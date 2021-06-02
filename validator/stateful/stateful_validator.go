@@ -84,7 +84,7 @@ func (self *validator) Receive(context actor.Context) {
 			//check balance
 			balance, err := proc.GetOngBalance(msg.Tx.Payer)
 			if err != nil {
-				errCode = errors.ErrTransactionBalance
+				errCode = errors.ErrUnknown
 			} else if balance.Cmp(msg.Tx.Cost()) < 0 {
 				errCode = errors.ErrTransactionBalance
 			} else {

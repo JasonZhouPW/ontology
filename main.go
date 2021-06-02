@@ -90,6 +90,8 @@ func setupAPP() *cli.App {
 		utils.DisableLogFileFlag,
 		utils.DisableEventLogFlag,
 		utils.DataDirFlag,
+		utils.ETHBlockGasLimitFlag,
+		utils.NGasLimitFlag,
 		utils.WasmVerifyMethodFlag,
 		//account setting
 		utils.WalletFileFlag,
@@ -113,6 +115,7 @@ func setupAPP() *cli.App {
 		utils.MaxConnInBoundFlag,
 		utils.MaxConnOutBoundFlag,
 		utils.MaxConnInBoundForSingleIPFlag,
+		utils.EVMChainId,
 		//test mode setting
 		utils.EnableTestModeFlag,
 		utils.TestModeGenBlockTimeFlag,

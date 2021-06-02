@@ -630,16 +630,27 @@ func (s *TXPoolServer) delTransaction(t *txtypes.Transaction) {
 
 // addTxList adds a valid transaction to the tx pool.
 func (s *TXPoolServer) addTxList(txEntry *tc.TXEntry) bool {
+	//solve the EIP155
+	eipFlag := false
+	if txEntry.Tx.TxType == txtypes.EIP155 {
+		eipFlag = true
+		pendingNonce := s.Nonce(txEntry.Tx.Payer)
+		ledgerNonce := s.CurrentNonce(txEntry.Tx.Payer)
+
+		if pendingNonce < ledgerNonce {
+			pendingNonce = ledgerNonce
+		}
+		if uint64(txEntry.Tx.Nonce) != pendingNonce {
+			s.increaseStats(tc.NonceErrStats)
+			return false
+		}
+	}
 	ret := s.txPool.AddTxList(txEntry)
 	if !ret {
 		s.increaseStats(tc.DuplicateStats)
 	}
-	//solve the EIP155
-	if txEntry.Tx.TxType == txtypes.EIP155 {
-		old := s.addEIPTxPool(txEntry.Tx)
-		if old != nil {
-			s.txPool.DelTxList(old)
-		}
+	if eipFlag && ret {
+		s.pendingNonces.set(txEntry.Tx.Payer, uint64(txEntry.Tx.Nonce+1))
 	}
 	return ret
 }
@@ -677,7 +688,7 @@ func (s *TXPoolServer) addEipPendingTx(tx *txtypes.Transaction) *txtypes.Transac
 	old := s.pendingEipTxs[tx.Payer].txs.Get(uint64(tx.Nonce))
 	if old == nil {
 		s.pendingEipTxs[tx.Payer].txs.Put(tx)
-		s.pendingNonces.set(tx.Payer, uint64(tx.Nonce+1))
+		//s.pendingNonces.set(tx.Payer, uint64(tx.Nonce+1))
 	} else {
 		if old.GasPrice < tx.GasPrice {
 			s.pendingEipTxs[tx.Payer].txs.Remove(uint64(old.Nonce))

@@ -109,6 +109,7 @@ func (worker *txPoolWorker) handleRsp(rsp *types.CheckResponse) {
 		worker.server.removePendingTx(rsp.Hash, rsp.ErrCode)
 		if pt.tx.TxType == tx.EIP155 {
 			worker.server.pendingNonces.setIfLower(pt.tx.Payer, uint64(pt.tx.Nonce))
+			worker.server.pendingEipTxs[pt.tx.Payer].txs.Remove(uint64(pt.tx.Nonce))
 		}
 		return
 	}
@@ -178,10 +179,13 @@ func (worker *txPoolWorker) putTxPool(pt *pendingTx) bool {
 		Tx:    pt.tx,
 		Attrs: pt.ret,
 	}
-	worker.server.addTxList(txEntry)
-	worker.server.removePendingTx(pt.tx.Hash(), errors.ErrNoError)
-	//remove from pendingEipTxs
-	worker.server.removeEIPPendingTx(pt.tx)
+	f := worker.server.addTxList(txEntry)
+	if f {
+		worker.server.removePendingTx(pt.tx.Hash(), errors.ErrNoError)
+		//remove from pendingEipTxs
+		worker.server.addEIPTxPool(txEntry.Tx)
+		worker.server.removeEIPPendingTx(pt.tx)
+	}
 	return true
 }
 
