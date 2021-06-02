@@ -50,7 +50,7 @@ func (self *IncrementValidator) Clean() {
 	self.mutex.Lock()
 	self.blocks = nil
 	self.baseHeight = 0
-	self.nonces = nil
+	self.nonces = make(map[common.Address]uint64)
 	self.mutex.Unlock()
 }
 

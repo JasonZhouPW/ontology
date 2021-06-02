@@ -82,8 +82,9 @@ const (
 	DEFAULT_DATA_DIR      = "./Chain/"
 	DEFAULT_RESERVED_FILE = "./peers.rsv"
 
-	DEFAULT_ETH_BLOCK_GAS_LIMIT = 8000000
+	DEFAULT_ETH_BLOCK_GAS_LIMIT = 800000000
 	N_GAS_LIMIT                 = 10
+	DEFAULT_ETH_CHAINID         = 5851
 )
 
 const (
@@ -702,6 +703,9 @@ func NewOntologyConfig() *OntologyConfig {
 			GasLimit:         DEFAULT_GAS_LIMIT,
 			DataDir:          DEFAULT_DATA_DIR,
 			WasmVerifyMethod: InterpVerifyMethod,
+			//todo check from input
+			ETHBlockGasLimit: DEFAULT_ETH_BLOCK_GAS_LIMIT,
+			NGasLimit:        N_GAS_LIMIT,
 		},
 		Consensus: &ConsensusConfig{
 			EnableConsensus: true,
@@ -723,6 +727,7 @@ func NewOntologyConfig() *OntologyConfig {
 			MaxConnInBound:            DEFAULT_MAX_CONN_IN_BOUND,
 			MaxConnOutBound:           DEFAULT_MAX_CONN_OUT_BOUND,
 			MaxConnInBoundForSingleIP: DEFAULT_MAX_CONN_IN_BOUND_FOR_SINGLE_IP,
+			EVMChainId:                DEFAULT_ETH_CHAINID,
 		},
 		Rpc: &RpcConfig{
 			EnableHttpJsonRpc: true,

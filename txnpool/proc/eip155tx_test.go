@@ -19,10 +19,13 @@ package proc
 
 import (
 	"crypto/ecdsa"
+	"encoding/hex"
 	"fmt"
 	ethcomm "github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
+	"github.com/ethereum/go-ethereum/rlp"
+	"github.com/ontio/ontology/common"
 	sysconfig "github.com/ontio/ontology/common/config"
 	txtypes "github.com/ontio/ontology/core/types"
 	"github.com/ontio/ontology/errors"
@@ -36,7 +39,7 @@ import (
 )
 
 func initCfg() {
-	sysconfig.DefConfig.P2PNode.EVMChainId = 1
+	sysconfig.DefConfig.P2PNode.EVMChainId = 5851
 }
 
 func genTxWithNonceAndPrice(nonce uint64, gp int64) *txtypes.Transaction {
@@ -52,15 +55,16 @@ func genTxWithNonceAndPrice(nonce uint64, gp int64) *txtypes.Transaction {
 	fromAddress := crypto.PubkeyToAddress(*publicKeyECDSA)
 	fmt.Printf("addr:%s\n", fromAddress.Hex())
 
-	//ontAddress, _ := common.AddressParseFromBytes(fromAddress[:])
-	//assert.Nil(t, err)
-	//fmt.Printf("ont addr:%s\n", ontAddress.ToBase58())
+	ontAddress, _ := common.AddressParseFromBytes(fromAddress[:])
+	fmt.Printf("ont addr:%s\n", ontAddress.ToBase58())
 
 	value := big.NewInt(1000000000)
 	gaslimit := uint64(21000)
 	gasPrice := big.NewInt(gp)
 
 	toAddress := ethcomm.HexToAddress("0x4592d8f8d7b001e72cb26a73e4fa1806a51ac79d")
+	toontAddress, _ := common.AddressParseFromBytes(toAddress[:])
+	fmt.Printf("to ont addr:%s\n", toontAddress.ToBase58())
 
 	var data []byte
 	tx := types.NewTransaction(nonce, toAddress, value, gaslimit, gasPrice, data)
@@ -72,12 +76,21 @@ func genTxWithNonceAndPrice(nonce uint64, gp int64) *txtypes.Transaction {
 		return nil
 	}
 
+	bt, _ := rlp.EncodeToBytes(signedTx)
+	fmt.Printf("rlptx:%s", hex.EncodeToString(bt))
+
 	otx, err := txtypes.TransactionFromEIP155(signedTx)
 	if err != nil {
 		fmt.Printf("err:%s\n", err.Error())
 		return nil
 	}
 	return otx
+}
+
+func Test_ethtxRLP(t *testing.T) {
+	initCfg()
+	genTxWithNonceAndPrice(0, 2500)
+
 }
 
 func Test_From(t *testing.T) {
@@ -219,40 +232,6 @@ func Test_higherNonce(t *testing.T) {
 	tmptx3 := s.eipTxPool[otx1.Payer].txs.Get(0)
 	assert.True(t, tmptx3.GasPrice == 3000)
 	assert.Nil(t, s.txPool.GetTransaction(otx1.Hash()))
-}
-
-func Test_TxActor(t *testing.T) {
-	t.Log("Starting tx actor test")
-	s := NewTxPoolServer(tc.MAX_WORKER_NUM, true, false)
-	if s == nil {
-		t.Error("Test case: new tx pool server failed")
-		return
-	}
-
-	otx := genTxWithNonceAndPrice(0, 2500)
-
-	txActor := NewTxActor(s)
-	txPid := startActor(txActor)
-	if txPid == nil {
-		t.Error("Test case: start tx actor failed")
-		s.Stop()
-		return
-	}
-
-	txReq := &tc.TxReq{
-		Tx:     otx,
-		Sender: tc.NilSender,
-	}
-	txPid.Tell(txReq)
-
-	time.Sleep(1 * time.Second)
-
-	future := txPid.RequestFuture(&tc.GetTxnReq{Hash: txn.Hash()}, 1*time.Second)
-	result, err := future.Result()
-	assert.Nil(t, err)
-	rsp := (result).(*tc.GetTxnRsp)
-	assert.Nil(t, rsp.Txn)
-
 }
 
 func Test_AssignRsp2Worker(t *testing.T) {
