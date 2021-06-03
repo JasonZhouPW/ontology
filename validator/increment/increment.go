@@ -88,7 +88,7 @@ func (self *IncrementValidator) AddBlock(block *types.Block) {
 	for _, tx := range block.Transactions {
 		txHashes[tx.Hash()] = true
 		if tx.TxType == types.EIP155 {
-			self.nonces[tx.Payer] = uint64(tx.Nonce)
+			self.nonces[tx.Payer] = uint64(tx.Nonce) + 1
 		}
 	}
 	self.blocks = append(self.blocks, txHashes)
@@ -106,12 +106,13 @@ func (self *IncrementValidator) Verify(tx *types.Transaction, startHeight uint32
 		if _, ok := self.blocks[i][tx.Hash()]; ok {
 			return fmt.Errorf("tx duplicated")
 		}
-	}
 
-	//check nonce
-	if tx.TxType == types.EIP155 {
-		if uint64(tx.Nonce) < self.nonces[tx.Payer] {
-			return fmt.Errorf("nonce is to low")
+		//check nonce
+		if tx.TxType == types.EIP155 {
+			if uint64(tx.Nonce) != self.nonces[tx.Payer] {
+				return fmt.Errorf("nonce is not correct")
+			}
+			self.nonces[tx.Payer] = uint64(tx.Nonce) + 1
 		}
 	}
 
