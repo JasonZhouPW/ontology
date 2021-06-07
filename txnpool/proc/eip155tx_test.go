@@ -120,7 +120,7 @@ func Test_GenEIP155tx(t *testing.T) {
 
 	t.Log("Starting test tx")
 	var s *TXPoolServer
-	s = NewTxPoolServer(tc.MAX_WORKER_NUM, true, false)
+	s = NewTxPoolServer(true, false)
 	if s == nil {
 		t.Error("Test case: new tx pool server failed")
 		return
@@ -171,7 +171,7 @@ func Test_higherNonce(t *testing.T) {
 	initCfg()
 	otx1 := genTxWithNonceAndPrice(0, 2500)
 	var s *TXPoolServer
-	s = NewTxPoolServer(tc.MAX_WORKER_NUM, true, false)
+	s = NewTxPoolServer(true, false)
 	if s == nil {
 		t.Error("Test case: new tx pool server failed")
 		return
@@ -237,7 +237,7 @@ func Test_higherNonce(t *testing.T) {
 func Test_AssignRsp2Worker(t *testing.T) {
 	t.Log("Starting assign response to the worker testing")
 	var s *TXPoolServer
-	s = NewTxPoolServer(tc.MAX_WORKER_NUM, true, false)
+	s = NewTxPoolServer(true, false)
 	if s == nil {
 		t.Error("Test case: new tx pool server failed")
 		return
@@ -248,29 +248,26 @@ func Test_AssignRsp2Worker(t *testing.T) {
 	s.assignRspToWorker(nil)
 
 	statelessRsp := &vt.CheckResponse{
-		WorkerId: 0,
-		ErrCode:  errors.ErrNoError,
-		Hash:     txn.Hash(),
-		Type:     vt.Stateless,
-		Height:   0,
+		ErrCode: errors.ErrNoError,
+		Hash:    txn.Hash(),
+		Type:    vt.Stateless,
+		Height:  0,
 	}
 
 	statefulRsp := &vt.CheckResponse{
-		WorkerId: 0,
-		ErrCode:  errors.ErrUnknown,
-		Hash:     txn.Hash(),
-		Type:     vt.Stateful,
-		Height:   0,
+		ErrCode: errors.ErrUnknown,
+		Hash:    txn.Hash(),
+		Type:    vt.Stateful,
+		Height:  0,
 	}
 	s.assignRspToWorker(statelessRsp)
 	s.assignRspToWorker(statefulRsp)
 
 	statelessRsp = &vt.CheckResponse{
-		WorkerId: 0,
-		ErrCode:  errors.ErrUnknown,
-		Hash:     txn.Hash(),
-		Type:     vt.Stateless,
-		Height:   0,
+		ErrCode: errors.ErrUnknown,
+		Hash:    txn.Hash(),
+		Type:    vt.Stateless,
+		Height:  0,
 	}
 	s.assignRspToWorker(statelessRsp)
 
