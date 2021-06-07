@@ -18,12 +18,12 @@
 package proc
 
 import (
-	"github.com/ontio/ontology/common"
-	"github.com/ontio/ontology/common/log"
-	"github.com/ontio/ontology/smartcontract/storage"
 	"sync"
 
 	ethcomm "github.com/ethereum/go-ethereum/common"
+	"github.com/ontio/ontology/common"
+	"github.com/ontio/ontology/common/log"
+	"github.com/ontio/ontology/core/ledger"
 	//"github.com/ethereum/go-ethereum/core/state"
 )
 
@@ -31,16 +31,16 @@ import (
 // accounts in the pool, falling back to reading from a real state database if
 // an account is unknown.
 type txNoncer struct {
-	fallback *storage.CacheDB
+	fallback *ledger.Ledger
 	nonces   map[common.Address]uint64
 	lock     sync.Mutex
 }
 
 // newTxNoncer creates a new virtual state database to track the pool nonces.
-func newTxNoncer(cachedb *storage.CacheDB) *txNoncer {
+func newTxNoncer(db *ledger.Ledger) *txNoncer {
 	return &txNoncer{
 		// do we really need  copy of stateDB???
-		fallback: cachedb,
+		fallback: db,
 		nonces:   make(map[common.Address]uint64),
 	}
 }
@@ -55,7 +55,7 @@ func (txn *txNoncer) get(addr common.Address) uint64 {
 
 	if _, ok := txn.nonces[addr]; !ok {
 		//txn.nonces[addr] = txn.fallback.GetNonce()
-		ethacct, err := txn.fallback.GetEthAccount(ethcomm.BytesToAddress(addr[:]))
+		ethacct, err := txn.fallback.GetEthAccount(ethcomm.Address(addr))
 		if err != nil {
 			log.Error(err)
 			//todo return the default nonce???

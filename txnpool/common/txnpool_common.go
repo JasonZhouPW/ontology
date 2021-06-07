@@ -19,9 +19,14 @@
 package common
 
 import (
+	"math/big"
+
 	"github.com/ontio/ontology/common"
+	"github.com/ontio/ontology/core/ledger"
 	"github.com/ontio/ontology/core/types"
 	"github.com/ontio/ontology/errors"
+	"github.com/ontio/ontology/smartcontract/service/native/ont"
+	"github.com/ontio/ontology/smartcontract/service/native/utils"
 )
 
 const (
@@ -186,4 +191,15 @@ func (n OrderByNetWorkFee) Less(i, j int) bool {
 	}
 
 	return n[j].Tx.GasPrice < n[i].Tx.GasPrice
+}
+
+func GetOngBalance(account common.Address) (*big.Int, error) {
+	cache := ledger.DefLedger.GetStore().GetCacheDB()
+	balanceKey := ont.GenBalanceKey(utils.OngContractAddress, account)
+	amount, err := utils.GetStorageUInt64(cache, balanceKey)
+	if err != nil {
+		return nil, err
+	}
+
+	return big.NewInt(0).SetUint64(amount), nil
 }

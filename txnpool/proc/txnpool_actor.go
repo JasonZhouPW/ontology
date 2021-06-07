@@ -20,8 +20,6 @@ package proc
 
 import (
 	"fmt"
-	"github.com/ontio/ontology/smartcontract/service/native/ont"
-	"math/big"
 	"reflect"
 
 	"github.com/ontio/ontology-eventbus/actor"
@@ -154,81 +152,56 @@ func (ta *TxActor) handleTransaction(sender tc.SenderType, txn *tx.Transaction, 
 		return
 	}
 
+	if txn.TxType == tx.EIP155 {
+		log.Debugf("handleTransaction: EIP155tx")
+		//verify signature
+		if err := txn.VerifyEIP155Tx(); err != nil {
+			log.Errorf("handleTransaction GetEIP155Tx failed:%s", err.Error())
+			replyTxResult(sender, txResultCh, txn.Hash(), errors.ErrUnknown, "Invalid EIP155 transaction signature ")
+			return
+		}
+
+		if txn.GasLimit > config.DefConfig.Common.ETHTxGasLimit {
+			replyTxResult(sender, txResultCh, txn.Hash(), errors.ErrUnknown, "EIP155 tx gaslimit exceed ")
+			return
+		}
+
+		eiptx, err := txn.GetEIP155Tx()
+		if err != nil {
+			log.Errorf("handleTransaction GetEIP155Tx failed:%s", err.Error())
+			replyTxResult(sender, txResultCh, txn.Hash(), errors.ErrUnknown, "Invalid EIP155 transaction format ")
+			return
+		}
+
+		currentNonce := ta.server.CurrentNonce(txn.Payer)
+		if eiptx.Nonce() < currentNonce {
+			replyTxResult(sender, txResultCh, txn.Hash(), errors.ErrUnknown,
+				fmt.Sprintf("handleTransaction lower nonce:%d ,current nonce:%d", currentNonce, eiptx.Nonce()))
+			return
+		}
+
+		balance, err := tc.GetOngBalance(txn.Payer)
+		if err != nil {
+			log.Errorf("GetOngBalance failed:%s", err.Error())
+			replyTxResult(sender, txResultCh, txn.Hash(), errors.ErrUnknown,
+				fmt.Sprintf("GetOngBalance failed:%s", err.Error()))
+			return
+		}
+		if balance.Cmp(txn.Cost()) < 0 {
+			replyTxResult(sender, txResultCh, txn.Hash(), errors.ErrUnknown,
+				fmt.Sprintf("not enough ong balance for %s - has:%d - want:%d", txn.Payer.ToHexString(), balance, txn.Cost()))
+			return
+		}
+	}
+
 	if !ta.server.disablePreExec {
 		if ok, desc := preExecCheck(txn); !ok {
 			log.Debugf("handleTransaction: preExecCheck tx %x failed", txn.Hash())
 			replyTxResult(sender, txResultCh, txn.Hash(), errors.ErrUnknown, desc)
 			return
 		}
-		ta.server.assignTxToWorker(txn, sender, txResultCh)
+		log.Debugf("handleTransaction: preExecCheck tx %x passed", txn.Hash())
 	}
-if txn.TxType == tx.EIP155 {
-			log.Debugf("handleTransaction: EIP155tx")
-			//verify signature
-			if err := txn.VerifyEIP155Tx(); err != nil {
-				log.Errorf("handleTransaction GetEIP155Tx failed:%s", err.Error())
-				if sender == tc.HttpSender && txResultCh != nil {
-					replyTxResult(txResultCh, txn.Hash(), errors.ErrUnknown,
-						"Invalid EIP155 transaction signature ")
-				}
-				return
-			}
-
-			if txn.GasLimit > config.DefConfig.Common.ETHTxGasLimit {
-				if sender == tc.HttpSender && txResultCh != nil {
-					replyTxResult(txResultCh, txn.Hash(), errors.ErrUnknown,
-						"EIP155 tx gaslimit exceed ")
-				}
-				return
-			}
-
-			eiptx, err := txn.GetEIP155Tx()
-			if err != nil {
-				log.Errorf("handleTransaction GetEIP155Tx failed:%s", err.Error())
-				if sender == tc.HttpSender && txResultCh != nil {
-					replyTxResult(txResultCh, txn.Hash(), errors.ErrUnknown,
-						"Invalid EIP155 transaction format ")
-				}
-				return
-			}
-
-			currentNonce := ta.server.CurrentNonce(txn.Payer)
-			if eiptx.Nonce() < currentNonce {
-				if sender == tc.HttpSender && txResultCh != nil {
-					replyTxResult(txResultCh, txn.Hash(), errors.ErrUnknown,
-						fmt.Sprintf("handleTransaction lower nonce:%d ,current nonce:%d", currentNonce, eiptx.Nonce()))
-				}
-				return
-			}
-
-			balance, err := GetOngBalance(txn.Payer)
-			if err != nil {
-				log.Errorf("GetOngBalance failed:%s", err.Error())
-				if sender == tc.HttpSender && txResultCh != nil {
-					replyTxResult(txResultCh, txn.Hash(), errors.ErrUnknown,
-						fmt.Sprintf("GetOngBalance failed:%s", err.Error()))
-				}
-				return
-			}
-			if balance.Cmp(txn.Cost()) < 0 {
-				if sender == tc.HttpSender && txResultCh != nil {
-					replyTxResult(txResultCh, txn.Hash(), errors.ErrUnknown,
-						fmt.Sprintf("not enough ong balance for %s - has:%d - want:%d", txn.Payer.ToHexString(), balance, txn.Cost()))
-				}
-				return
-			}
-		}
-
-		if !ta.server.disablePreExec {
-			if ok, desc := preExecCheck(txn); !ok {
-				log.Debugf("handleTransaction: preExecCheck tx %x failed", txn.Hash())
-				if sender == tc.HttpSender && txResultCh != nil {
-					replyTxResult(txResultCh, txn.Hash(), errors.ErrUnknown, desc)
-				}
-				return
-			}
-			log.Debugf("handleTransaction: preExecCheck tx %x passed", txn.Hash())
-		}
 	<-ta.server.slots
 	ta.server.assignTxToWorker(txn, sender, txResultCh)
 }
@@ -349,14 +322,4 @@ func (tpa *TxPoolActor) Receive(context actor.Context) {
 	default:
 		log.Debugf("txpool actor: unknown msg %v type %v", msg, reflect.TypeOf(msg))
 	}
-}
-func GetOngBalance(account common.Address) (*big.Int, error) {
-	cache := ledger.DefLedger.GetStore().GetCacheDB()
-	balanceKey := ont.GenBalanceKey(utils.OngContractAddress, account)
-	amount, err := utils.GetStorageUInt64(cache, balanceKey)
-	if err != nil {
-		return nil, err
-	}
-
-	return big.NewInt(0).SetUint64(amount), nil
 }

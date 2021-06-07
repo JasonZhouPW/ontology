@@ -152,7 +152,7 @@ func (s *TXPoolServer) init(disablePreExec, disableBroadcastNetTx bool) {
 	//init queue
 	s.eipTxPool = make(map[common.Address]*txList)
 	s.pendingEipTxs = make(map[common.Address]*txList)
-	s.pendingNonces = newTxNoncer(ledger.DefLedger.GetStore().GetCacheDB())
+	s.pendingNonces = newTxNoncer(ledger.DefLedger)
 
 	s.pendingBlock = &pendingBlock{
 		processedTxs:   make(map[common.Uint256]*tc.VerifyTxResult, 0),
@@ -676,7 +676,7 @@ func (s *TXPoolServer) verifyBlock(req *tc.VerifyBlockReq, sender *actor.PID) {
 }
 
 func (s *TXPoolServer) CurrentNonce(addr common.Address) uint64 {
-	ethacct, err := ledger.DefLedger.GetStore().GetCacheDB().GetEthAccount(ethcomm.BytesToAddress(addr[:]))
+	ethacct, err := ledger.DefLedger.GetEthAccount(ethcomm.Address(addr))
 	if err != nil {
 		return 0
 	}

@@ -157,7 +157,7 @@ func (worker *txPoolWorker) handleRsp(rsp *types.CheckResponse) {
 func (worker *txPoolWorker) putTxPool(pt *pendingTx) bool {
 	txEntry := &tc.TXEntry{
 		Tx:    pt.tx,
-		Attrs: pt.ret,
+		Attrs: pt.GetTxAttr(),
 	}
 	f := worker.server.addTxList(txEntry)
 	if f {
