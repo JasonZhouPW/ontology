@@ -28,9 +28,7 @@ import (
 	"github.com/ontio/ontology/common"
 	sysconfig "github.com/ontio/ontology/common/config"
 	txtypes "github.com/ontio/ontology/core/types"
-	"github.com/ontio/ontology/errors"
 	tc "github.com/ontio/ontology/txnpool/common"
-	vt "github.com/ontio/ontology/validator/types"
 	"github.com/stretchr/testify/assert"
 
 	"math/big"
@@ -234,42 +232,4 @@ func Test_higherNonce(t *testing.T) {
 	assert.Nil(t, s.txPool.GetTransaction(otx1.Hash()))
 }
 
-func Test_AssignRsp2Worker(t *testing.T) {
-	t.Log("Starting assign response to the worker testing")
-	var s *TXPoolServer
-	s = NewTxPoolServer(true, false)
-	if s == nil {
-		t.Error("Test case: new tx pool server failed")
-		return
-	}
-
-	defer s.Stop()
-
-	s.assignRspToWorker(nil)
-
-	statelessRsp := &vt.CheckResponse{
-		ErrCode: errors.ErrNoError,
-		Hash:    txn.Hash(),
-		Type:    vt.Stateless,
-		Height:  0,
-	}
-
-	statefulRsp := &vt.CheckResponse{
-		ErrCode: errors.ErrUnknown,
-		Hash:    txn.Hash(),
-		Type:    vt.Stateful,
-		Height:  0,
-	}
-	s.assignRspToWorker(statelessRsp)
-	s.assignRspToWorker(statefulRsp)
-
-	statelessRsp = &vt.CheckResponse{
-		ErrCode: errors.ErrUnknown,
-		Hash:    txn.Hash(),
-		Type:    vt.Stateless,
-		Height:  0,
-	}
-	s.assignRspToWorker(statelessRsp)
-
-	t.Log("Ending assign response to the worker testing")
-}
+//
