@@ -25,6 +25,9 @@ import (
 	"github.com/ontio/ontology/common"
 	"github.com/ontio/ontology/common/log"
 	"github.com/ontio/ontology/core/types"
+	"github.com/ontio/ontology/http/base/actor"
+
+	ethcomm "github.com/ethereum/go-ethereum/common"
 )
 
 // IncrementValidator do increment check of transaction
@@ -91,6 +94,7 @@ func (self *IncrementValidator) AddBlock(block *types.Block) {
 		self.baseHeight += 1
 	}
 	txHashes := make(map[common.Uint256]bool)
+	self.nonces = make(map[common.Address]NonceWithTxhash)
 	for _, tx := range block.Transactions {
 		txHashes[tx.Hash()] = true
 		if tx.TxType == types.EIP155 {
@@ -118,9 +122,21 @@ func (self *IncrementValidator) Verify(tx *types.Transaction, startHeight uint32
 
 		//check nonce
 		if tx.TxType == types.EIP155 {
+
+			if self.nonces[tx.Payer].Txhash == common.UINT256_EMPTY {
+				acct, err := actor.GetEthAccount(ethcomm.BytesToAddress(tx.Payer[:]))
+				if err != nil {
+					return err
+				}
+				self.nonces[tx.Payer] = NonceWithTxhash{
+					Nonce: acct.Nonce,
+				}
+			}
+
 			if uint64(tx.Nonce) != self.nonces[tx.Payer].Nonce && tx.Hash() != self.nonces[tx.Payer].Txhash {
 				return fmt.Errorf("nonce is not correct")
 			}
+
 			if self.nonces[tx.Payer].Txhash != tx.Hash() {
 				self.nonces[tx.Payer] = NonceWithTxhash{
 					Nonce:  uint64(tx.Nonce) + 1,

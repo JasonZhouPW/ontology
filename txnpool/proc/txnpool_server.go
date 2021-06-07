@@ -623,19 +623,6 @@ func (s *TXPoolServer) verifyBlock(req *tc.VerifyBlockReq, sender *actor.PID) {
 			s.sendBlkResult2Consensus()
 			return
 		}
-		if t.TxType == txtypes.EIP155 {
-			if t.GasLimit > config.DefConfig.Common.ETHTxGasLimit {
-				entry := &tc.VerifyTxResult{
-					Height:  s.pendingBlock.height,
-					Tx:      t,
-					ErrCode: errors.ErrETHTxGaslimitExceed,
-				}
-				s.pendingBlock.processedTxs[t.Hash()] = entry
-				s.sendBlkResult2Consensus()
-				return
-			}
-
-		}
 
 		// Check whether double spent
 		if _, ok := txs[t.Hash()]; ok {
