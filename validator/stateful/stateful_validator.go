@@ -24,7 +24,6 @@ import (
 	"github.com/ontio/ontology/core/ledger"
 	"github.com/ontio/ontology/core/types"
 	"github.com/ontio/ontology/errors"
-	"github.com/ontio/ontology/txnpool/common"
 	vatypes "github.com/ontio/ontology/validator/types"
 )
 
@@ -49,19 +48,11 @@ func (self *ValidatorPool) SubmitVerifyTask(tx *types.Transaction, rspCh chan<- 
 		} else if exist {
 			errCode = errors.ErrDuplicatedTx
 		} else if tx.TxType == types.EIP155 {
-			//check balance
-			balance, err := common.GetOngBalance(tx.Payer)
+			ethacct, err := ledger.DefLedger.GetEthAccount(ethcomm.Address(tx.Payer))
 			if err != nil {
-				errCode = errors.ErrUnknown
-			} else if balance.Cmp(tx.Cost()) < 0 {
-				errCode = errors.ErrTransactionBalance
-			} else {
-				ethacct, err := ledger.DefLedger.GetEthAccount(ethcomm.Address(tx.Payer))
-				if err != nil {
-					errCode = errors.ErrNoAccount
-				} else if uint64(tx.Nonce) < ethacct.Nonce {
-					errCode = errors.ErrHigherNonceExist
-				}
+				errCode = errors.ErrNoAccount
+			} else if uint64(tx.Nonce) < ethacct.Nonce {
+				errCode = errors.ErrHigherNonceExist
 			}
 		}
 
