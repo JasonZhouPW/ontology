@@ -174,11 +174,12 @@ if txn.TxType == tx.EIP155 {
 				return
 			}
 
-			if txn.GasLimit > config.DefConfig.Common.ETHBlockGasLimit/config.DefConfig.Common.NGasLimit {
+			if txn.GasLimit > config.DefConfig.Common.ETHTxGasLimit {
 				if sender == tc.HttpSender && txResultCh != nil {
 					replyTxResult(txResultCh, txn.Hash(), errors.ErrUnknown,
 						"EIP155 tx gaslimit exceed ")
 				}
+				return
 			}
 
 			eiptx, err := txn.GetEIP155Tx()
