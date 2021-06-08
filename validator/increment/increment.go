@@ -131,7 +131,7 @@ func (self *IncrementValidator) Verify(tx *types.Transaction, startHeight uint32
 	//check nonce
 	if tx.TxType == types.EIP155 {
 		//1st tx for account
-		if nonceCtx[tx.Payer].Txhash == common.UINT256_EMPTY && nonceCtx[tx.Payer].Nonce == 0 {
+		if isNonceWithTxhashEmpty(nonceCtx[tx.Payer]) {
 			//get the nonce is cache
 			//
 			for i := int(startHeight - self.baseHeight); i < len(self.blocks); i++ {
@@ -151,7 +151,6 @@ func (self *IncrementValidator) Verify(tx *types.Transaction, startHeight uint32
 					Txhash: common.UINT256_EMPTY, //we don't know the last tx by this account
 				}
 			}
-
 		}
 
 		if uint64(tx.Nonce) != nonceCtx[tx.Payer].Nonce && tx.Hash() != nonceCtx[tx.Payer].Txhash {
