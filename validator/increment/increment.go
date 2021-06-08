@@ -101,11 +101,6 @@ func (self *IncrementValidator) AddBlock(block *types.Block) {
 		txhash := tx.Hash()
 		txHashes[txhash] = true
 		if tx.TxType == types.EIP155 {
-			if nonceMap[tx.Payer].Nonce != uint64(tx.Nonce) {
-				log.Errorf("discontinue nonce is not allowed: txhash:%s, block height= %d", txhash.ToHexString(), block.Header.Height)
-				return
-			}
-
 			nonceMap[tx.Payer] = NonceWithTxhash{
 				Nonce:  uint64(tx.Nonce) + 1,
 				Txhash: tx.Hash(),
