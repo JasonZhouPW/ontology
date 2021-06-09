@@ -60,7 +60,7 @@ func isBalanceEnough(address common.Address, gas uint64) bool {
 }
 
 func replyTxResult(sender tc.SenderType, txResultCh chan *tc.TxResult, hash common.Uint256, err errors.ErrCode, desc string) {
-	if sender == tc.HttpSender && txResultCh != nil {
+	if txResultCh != nil {
 		result := &tc.TxResult{
 			Err:  err,
 			Hash: hash,
