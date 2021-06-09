@@ -95,7 +95,6 @@ func (self *IncrementValidator) AddBlock(block *types.Block) {
 		self.nonces = self.nonces[1:]
 	}
 	txHashes := make(map[common.Uint256]bool)
-	//self.nonces = make(map[common.Address]NonceWithTxhash)
 	nonceMap := make(map[common.Address]NonceWithTxhash)
 	for _, tx := range block.Transactions {
 		txhash := tx.Hash()
@@ -127,8 +126,7 @@ func (self *IncrementValidator) Verify(tx *types.Transaction, startHeight uint32
 	if tx.TxType == types.EIP155 {
 		//1st tx for account
 		if isNonceWithTxhashEmpty(nonceCtx[tx.Payer]) {
-			//get the nonce is cache
-			//
+			//get the nonce from cache
 			for i := int(startHeight - self.baseHeight); i < len(self.blocks); i++ {
 				latestNonce := self.nonces[i][tx.Payer]
 				if !isNonceWithTxhashEmpty(latestNonce) {
